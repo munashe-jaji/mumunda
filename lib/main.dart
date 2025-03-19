@@ -1,29 +1,19 @@
 import 'package:flutter/material.dart';
-import 'pages/splash_screen.dart';
-import 'pages/welcome_screen.dart';
-import 'pages/login.dart';
+import 'splash_screen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => SplashScreen(),
-        '/welcome': (context) => WelcomeScreen(),
-        '/login': (context) => LoginPage(),
-      },
+      home: SplashScreen(),
     );
   }
 }
