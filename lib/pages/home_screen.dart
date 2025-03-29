@@ -18,13 +18,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _widgetOptions = <Widget>[
-    HomeScreenContent(),
-    ProductsScreen(),
-    MapScreen(),
-    MarketplaceScreen(),
-    ExhibitorsScreen(),
-  ];
+  late final List<Widget> _widgetOptions;
+
+  @override
+  void initState() {
+    super.initState();
+    _widgetOptions = <Widget>[
+      const HomeScreenContent(),
+      ProductsScreen(userEmail: widget.email),
+      const MapScreen(),
+      const MarketplaceScreen(),
+      const ExhibitorsScreen(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {

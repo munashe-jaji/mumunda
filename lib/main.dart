@@ -38,7 +38,9 @@ class MyApp extends StatelessWidget {
         WelcomeScreen.id: (context) => const WelcomeScreen(),
         LoginScreen.id: (context) => const LoginScreen(),
         SignUpScreen.id: (context) => const SignUpScreen(),
-        ProductsScreen.id: (context) => const ProductsScreen(),
+        // Remove the constant constructor for ProductsScreen
+        ProductsScreen.id: (context) => ProductsScreen(
+            userEmail: ModalRoute.of(context)!.settings.arguments as String),
         MapScreen.id: (context) => const MapScreen(),
         MarketplaceScreen.id: (context) => const MarketplaceScreen(),
         ExhibitorsScreen.id: (context) => const ExhibitorsScreen(),
