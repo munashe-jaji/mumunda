@@ -4,7 +4,6 @@ import 'pages/splash_screen.dart';
 import 'pages/welcome_screen.dart';
 import 'pages/login_screen.dart';
 import 'pages/signup_screen.dart';
-import 'pages/home_screen.dart'; // Import HomeScreen
 import 'pages/products_screen.dart'; // Import ProductsScreen
 import 'pages/map_screen.dart'; // Import MapScreen
 import 'pages/marketplace_screen.dart'; // Import MarketplaceScreen

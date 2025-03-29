@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:mis/pages/exhibitors_screen.dart';
 import 'package:mis/pages/map_screen.dart';
 import 'package:mis/pages/marketplace_screen.dart';
@@ -77,8 +78,42 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class HomeScreenContent extends StatelessWidget {
+class HomeScreenContent extends StatefulWidget {
   const HomeScreenContent({super.key});
+
+  @override
+  _HomeScreenContentState createState() => _HomeScreenContentState();
+}
+
+class _HomeScreenContentState extends State<HomeScreenContent> {
+  final PageController _pageController = PageController();
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
+      if (_pageController.page == 2) {
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeIn,
+        );
+      } else {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeIn,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,9 +124,10 @@ class HomeScreenContent extends StatelessWidget {
           height: 200,
           color: const Color.fromARGB(255, 38, 163, 0),
           child: PageView(
+            controller: _pageController,
             children: const [
-              BannerItem(text: 'Guest Speaker: John Doe'),
-              BannerItem(text: 'Workshop: Flutter Development'),
+              BannerItem(text: 'Guest Speaker: Sir Manango'),
+              BannerItem(text: 'Workshop: Mashonaland West Trade Show'),
               BannerItem(text: 'Special Exhibit: AI Innovations'),
             ],
           ),
@@ -122,7 +158,7 @@ class HomeScreenContent extends StatelessWidget {
 class BannerItem extends StatelessWidget {
   final String text;
 
-  const BannerItem({required this.text, Key? key}) : super(key: key);
+  const BannerItem({required this.text, super.key});
 
   @override
   Widget build(BuildContext context) {
