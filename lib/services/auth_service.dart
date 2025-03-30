@@ -5,10 +5,20 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<User?> signUpWithEmailAndPassword(
-      String email, String password, String name) async {
+    String email,
+    String password,
+    String name,
+    String phone,
+    String farmName,
+    String location,
+    String farmSize,
+    String farmingType,
+  ) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
-          email: email, password: password);
+        email: email,
+        password: password,
+      );
       User? user = result.user;
 
       // Save user info to Firestore
@@ -17,6 +27,11 @@ class AuthService {
           'uid': user.uid,
           'name': name,
           'email': email,
+          'phone': phone,
+          'farmName': farmName,
+          'location': location,
+          'farmSize': farmSize,
+          'farmingType': farmingType,
           'role': 'user', // Default role
         });
       }
@@ -29,10 +44,14 @@ class AuthService {
   }
 
   Future<User?> signInWithEmailAndPassword(
-      String email, String password) async {
+    String email,
+    String password,
+  ) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
-          email: email, password: password);
+        email: email,
+        password: password,
+      );
       return result.user;
     } catch (e) {
       print(e.toString());

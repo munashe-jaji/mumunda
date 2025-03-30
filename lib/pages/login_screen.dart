@@ -64,9 +64,17 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: const InputDecoration(labelText: 'Password'),
               obscureText: true,
             ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
               child: const Text('Login'),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: Image.asset(
+                'assets/images/logo.png', // Make sure to add your logo image in the assets folder and update the path accordingly
+                height: 200,
+              ),
             ),
           ],
         ),

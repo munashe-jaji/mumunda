@@ -29,6 +29,7 @@ class WelcomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 54, 54, 54),
                         ),
                       ),
                       const Text(
@@ -41,7 +42,7 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 15),
                       Image.asset(
-                        'assets/images/tractor.jpg', // Replace with your image path
+                        'assets/images/login.jpg', // Replace with your image path
                         height: 280,
                       ),
                       const SizedBox(height: 15),
@@ -67,24 +68,15 @@ class WelcomeScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 25),
-                      const Text(
-                        'Sign up using',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: CircleAvatar(
-                          radius: 25,
-                          backgroundColor: Colors.transparent,
-                          child: Image.asset('assets/images/google.png'),
-                        ),
-                      ),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              Center(
+                child: Image.asset(
+                  'assets/images/logo.png', // Replace with your logo image path
+                  height: 100,
                 ),
               ),
             ],
