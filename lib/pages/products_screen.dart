@@ -21,7 +21,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   final List<Map<String, dynamic>> allProducts = [
     {
-      'image': 'https://via.placeholder.com/150',
+      'image': 'assets/images/vegetables.jpg',
       'name': 'Organic Tomatoes',
       'description': 'Freshly harvested, pesticide-free tomatoes',
       'price': '\$2 per kg',
@@ -30,7 +30,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       'category': 'Vegetables',
     },
     {
-      'image': 'https://via.placeholder.com/150',
+      'image': 'assets/images/fruits.jpg',
       'name': 'Fresh Apples',
       'description': 'Crisp and juicy apples',
       'price': '\$3 per kg',
@@ -39,7 +39,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
       'category': 'Fruits',
     },
     {
-      'image': 'https://via.placeholder.com/150',
+      'image': 'assets/images/tractor.jpg',
       'name': 'Tractor',
       'description': 'High-performance farm tractor',
       'price': 'Contact for price',
