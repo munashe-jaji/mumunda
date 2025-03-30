@@ -25,14 +25,15 @@ class WelcomeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       const Text(
-                        'Welcome to MIS',
+                        'Welcome to Mumunda',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 54, 54, 54),
                         ),
                       ),
                       const Text(
-                        'Manage your tasks efficiently',
+                        'Join the ultimate Mashonaland West Agriculture Trade Show',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.grey,
@@ -40,37 +41,42 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 15),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, LoginScreen.id);
-                        },
-                        child: const Text('Login'),
+                      Image.asset(
+                        'assets/images/login.jpg', // Replace with your image path
+                        height: 280,
                       ),
-                      const SizedBox(height: 10),
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, SignUpScreen.id);
-                        },
-                        child: const Text('Sign Up'),
-                      ),
-                      const SizedBox(height: 25),
-                      const Text(
-                        'Sign up using',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: CircleAvatar(
-                          radius: 25,
-                          backgroundColor: Colors.transparent,
-                          child: Image.asset('assets/images/google.png'),
-                        ),
+                      const SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, LoginScreen.id);
+                              },
+                              child: const Text('Login'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, SignUpScreen.id);
+                              },
+                              child: const Text('Sign Up'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              Center(
+                child: Image.asset(
+                  'assets/images/logo.png', // Replace with your logo image path
+                  height: 100,
                 ),
               ),
             ],
