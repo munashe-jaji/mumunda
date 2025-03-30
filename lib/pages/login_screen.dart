@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mis/services/auth_service.dart';
-import 'package:mis/pages/home_screen.dart'; // Import the HomeScreen
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mis/pages/home_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mis/admin/adminscreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,20 +17,32 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  Future<User?> _signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-    if (googleUser != null) {
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final user = await _auth.signInWithEmailAndPassword(email, password);
+    if (user != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final role = userDoc.data()?['role'] ?? 'user';
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login Successful')),
       );
-      final UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-      return userCredential.user;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => role == 'admin'
+              ? AdminScreen(email: email)
+              : HomeScreen(email: email),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login Failed')),
+      );
     }
-    return null;
   }
 
   @override
@@ -53,49 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: true,
             ),
             ElevatedButton(
-              onPressed: () async {
-                final email = _emailController.text;
-                final password = _passwordController.text;
-                final user =
-                    await _auth.signInWithEmailAndPassword(email, password);
-                if (user != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Login Successful')),
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomeScreen(email: email),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Login Failed')),
-                  );
-                }
-              },
+              onPressed: _login,
               child: const Text('Login'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final user = await _signInWithGoogle();
-                if (user != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Google Sign-In Successful')),
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomeScreen(email: user.email!),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Google Sign-In Failed')),
-                  );
-                }
-              },
-              child: const Text('Sign in with Google'),
             ),
           ],
         ),

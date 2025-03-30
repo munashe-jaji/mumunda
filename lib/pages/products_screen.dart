@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProductsScreen extends StatefulWidget {
   final String userEmail;
@@ -19,35 +20,33 @@ class _ProductsScreenState extends State<ProductsScreen> {
     'Farm Implements'
   ];
 
-  final List<Map<String, dynamic>> allProducts = [
-    {
-      'image': 'assets/images/vegetables.jpg',
-      'name': 'Organic Tomatoes',
-      'description': 'Freshly harvested, pesticide-free tomatoes',
-      'price': '\$2 per kg',
-      'seller': 'GreenFarm Ltd.',
-      'quantity': '20 bags available',
-      'category': 'Vegetables',
-    },
-    {
-      'image': 'assets/images/fruits.jpg',
-      'name': 'Fresh Apples',
-      'description': 'Crisp and juicy apples',
-      'price': '\$3 per kg',
-      'seller': 'Apple Orchard',
-      'quantity': '50 bags available',
-      'category': 'Fruits',
-    },
-    {
-      'image': 'assets/images/tractor.jpg',
-      'name': 'Tractor',
-      'description': 'High-performance farm tractor',
-      'price': 'Contact for price',
-      'seller': 'Farm Equipment Co.',
-      'quantity': '5 units available',
-      'category': 'Farm Implements',
-    },
-  ];
+  List<Map<String, dynamic>> allProducts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProducts();
+  }
+
+  Future<void> fetchProducts() async {
+    final QuerySnapshot snapshot =
+        await FirebaseFirestore.instance.collection('products').get();
+    final List<Map<String, dynamic>> products = snapshot.docs.map((doc) {
+      return {
+        'image': doc['image'],
+        'name': doc['name'],
+        'description': doc['description'],
+        'price': doc['price'],
+        'seller': doc['seller'],
+        'quantity': doc['quantity'],
+        'category': doc['category'],
+      };
+    }).toList();
+
+    setState(() {
+      allProducts = products;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,21 +104,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         Text('Quantity: ${product['quantity']}'),
                       ],
                     ),
-                    trailing: Column(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.favorite_border),
-                          onPressed: () {
-                            // Implement add to wishlist functionality
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.message),
-                          onPressed: () {
-                            // Implement inquire functionality
-                          },
-                        ),
-                      ],
+                    trailing: IconButton(
+                      icon: const Icon(Icons.message),
+                      onPressed: () {
+                        // Implement inquire functionality
+                      },
                     ),
                   ),
                 );

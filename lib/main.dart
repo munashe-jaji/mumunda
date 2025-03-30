@@ -4,10 +4,10 @@ import 'pages/splash_screen.dart';
 import 'pages/welcome_screen.dart';
 import 'pages/login_screen.dart';
 import 'pages/signup_screen.dart';
-import 'pages/products_screen.dart'; // Import ProductsScreen
-import 'pages/map_screen.dart'; // Import MapScreen
-import 'pages/marketplace_screen.dart'; // Import MarketplaceScreen
-import 'pages/exhibitors_screen.dart'; // Import ExhibitorsScreen
+import 'pages/products_screen.dart';
+import 'pages/map_screen.dart';
+import 'pages/marketplace_screen.dart';
+import 'pages/exhibitors_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,12 +33,11 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const SplashScreen(),
-      debugShowCheckedModeBanner: false, // Remove the debug banner
+      debugShowCheckedModeBanner: false,
       routes: {
         WelcomeScreen.id: (context) => const WelcomeScreen(),
         LoginScreen.id: (context) => const LoginScreen(),
         SignUpScreen.id: (context) => const SignUpScreen(),
-        // Remove the constant constructor for ProductsScreen
         ProductsScreen.id: (context) => ProductsScreen(
             userEmail: ModalRoute.of(context)!.settings.arguments as String),
         MapScreen.id: (context) => const MapScreen(),
