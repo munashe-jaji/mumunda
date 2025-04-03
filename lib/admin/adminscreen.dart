@@ -28,8 +28,8 @@ class AdminScreen extends StatelessWidget {
           ],
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'Manage Products'),
-              Tab(text: 'Manage Exhibitors'),
+              Tab(text: 'Manage Events'),
+              Tab(text: 'Approve Exhibitors'),
             ],
           ),
         ),
@@ -42,8 +42,8 @@ class AdminScreen extends StatelessWidget {
               Expanded(
                 child: TabBarView(
                   children: [
-                    ManageProductsPage(),
-                    ManageExhibitorsPage(),
+                    ManageEventsPage(),
+                    ApproveExhibitorsPage(),
                   ],
                 ),
               ),
@@ -52,110 +52,27 @@ class AdminScreen extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            _showAddOptions(context);
+            _showAddEventOptions(context);
           },
-          child: const Icon(Icons.add),
           backgroundColor: Colors.green,
+          child: const Icon(Icons.add),
         ),
       ),
     );
   }
 
-  void _showAddOptions(BuildContext context) {
+  void _showAddEventOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
         return Wrap(
           children: <Widget>[
             ListTile(
-              leading: const Icon(Icons.add_shopping_cart),
-              title: const Text('Add Product'),
+              leading: const Icon(Icons.event),
+              title: const Text('Add Event'),
               onTap: () {
                 Navigator.pop(context);
-                // Navigate to Add Product screen
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_add),
-              title: const Text('Add Exhibitor'),
-              onTap: () {
-                Navigator.pop(context);
-                _showAddExhibitorForm(context);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showAddExhibitorForm(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
-    String contact = '';
-    String description = '';
-    String location = '';
-    String logo = '';
-    String name = '';
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add Exhibitor'),
-          content: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                children: <Widget>[
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Contact'),
-                    onSaved: (value) {
-                      contact = value ?? '';
-                    },
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Description'),
-                    onSaved: (value) {
-                      description = value ?? '';
-                    },
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Location'),
-                    onSaved: (value) {
-                      location = value ?? '';
-                    },
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Logo'),
-                    onSaved: (value) {
-                      logo = value ?? '';
-                    },
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Name'),
-                    onSaved: (value) {
-                      name = value ?? '';
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            ElevatedButton(
-              child: const Text('Save'),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  _formKey.currentState!.save();
-                  // Save exhibitor logic
-                  Navigator.of(context).pop();
-                }
+                // Navigate to Add Event screen
               },
             ),
           ],
@@ -165,55 +82,49 @@ class AdminScreen extends StatelessWidget {
   }
 }
 
-class ManageProductsPage extends StatelessWidget {
-  const ManageProductsPage({super.key});
+class ManageEventsPage extends StatelessWidget {
+  const ManageEventsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Text('Manage Products',
+        const Text('Manage Events',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 20),
         Expanded(
           child: SingleChildScrollView(
             child: DataTable(
               columns: const [
-                DataColumn(label: Text('Image')),
-                DataColumn(label: Text('Name')),
-                DataColumn(label: Text('Description')),
-                DataColumn(label: Text('Price')),
-                DataColumn(label: Text('Seller')),
-                DataColumn(label: Text('Quantity')),
+                DataColumn(label: Text('Event Name')),
+                DataColumn(label: Text('Date')),
+                DataColumn(label: Text('Location')),
                 DataColumn(label: Text('Actions')),
               ],
               rows: [
                 DataRow(cells: [
-                  DataCell(Image.network('https://via.placeholder.com/50')),
-                  const DataCell(Text('Product 1')),
-                  const DataCell(Text('Description 1')),
-                  const DataCell(Text('\$10')),
-                  const DataCell(Text('Seller 1')),
-                  const DataCell(Text('100')),
+                  const DataCell(Text('Event 1')),
+                  const DataCell(Text('2023-10-01')),
+                  const DataCell(Text('Location 1')),
                   DataCell(Row(
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          // Add to Wishlist logic
+                          // Update event logic
                         },
-                        child: const Text('Add to Wishlist'),
+                        child: const Text('Update'),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () {
-                          // Inquire logic
+                          // Delete event logic
                         },
-                        child: const Text('Inquire'),
+                        child: const Text('Delete'),
                       ),
                     ],
                   )),
                 ]),
-                // Add more DataRow here for more products
+                // Add more DataRow here for more events
               ],
             ),
           ),
@@ -223,14 +134,14 @@ class ManageProductsPage extends StatelessWidget {
   }
 }
 
-class ManageExhibitorsPage extends StatelessWidget {
-  const ManageExhibitorsPage({super.key});
+class ApproveExhibitorsPage extends StatelessWidget {
+  const ApproveExhibitorsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Text('Manage Exhibitors',
+        const Text('Approve Exhibitors',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 20),
         Expanded(
@@ -251,16 +162,16 @@ class ManageExhibitorsPage extends StatelessWidget {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          // Update exhibitor logic
+                          // Approve exhibitor logic
                         },
-                        child: const Text('Update'),
+                        child: const Text('Approve'),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () {
-                          // Delete exhibitor logic
+                          // Reject exhibitor logic
                         },
-                        child: const Text('Delete'),
+                        child: const Text('Reject'),
                       ),
                     ],
                   )),

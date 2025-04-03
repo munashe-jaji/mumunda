@@ -9,11 +9,16 @@ class AuthService {
     String password,
     String name,
     String phone,
-    String farmName,
-    String location,
-    String farmSize,
-    String farmingType,
-  ) async {
+    String location, {
+    String? farmName,
+    String? farmSize,
+    String? farmingType,
+    String? contact,
+    String? description,
+    String? logo,
+    bool isFarmer = false,
+    bool isExhibitor = false,
+  }) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -23,17 +28,37 @@ class AuthService {
 
       // Save user info to Firestore
       if (user != null) {
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        Map<String, dynamic> userData = {
           'uid': user.uid,
           'name': name,
           'email': email,
           'phone': phone,
-          'farmName': farmName,
           'location': location,
-          'farmSize': farmSize,
-          'farmingType': farmingType,
-          'role': 'user', // Default role
-        });
+          'role': isFarmer
+              ? 'farmer'
+              : isExhibitor
+                  ? 'exhibitor'
+                  : 'user',
+        };
+
+        if (isFarmer) {
+          userData.addAll({
+            'farmName': farmName,
+            'farmSize': farmSize,
+            'farmingType': farmingType,
+          });
+        } else if (isExhibitor) {
+          userData.addAll({
+            'contact': contact,
+            'description': description,
+            'logo': logo,
+          });
+        }
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set(userData);
       }
 
       return user;
