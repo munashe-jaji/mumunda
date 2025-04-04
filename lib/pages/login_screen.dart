@@ -3,6 +3,7 @@ import 'package:mis/services/auth_service.dart';
 import 'package:mis/pages/home_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mis/admin/adminscreen.dart';
+import 'package:mis/exhibitor/exhibitorscreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,9 +34,15 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => role == 'admin'
-              ? AdminScreen(email: email)
-              : HomeScreen(email: email),
+          builder: (context) {
+            if (role == 'admin') {
+              return AdminScreen(email: email);
+            } else if (role == 'exhibitor') {
+              return ExhibitorScreen(email: email);
+            } else {
+              return HomeScreen(email: email);
+            }
+          },
         ),
       );
     } else {

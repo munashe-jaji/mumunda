@@ -163,4 +163,29 @@ class AuthService {
       print("Error in addEvent: ${e.toString()}");
     }
   }
+
+  Future<void> deleteUserAccount() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .delete();
+        await user.delete();
+        print("User account deleted successfully");
+      }
+    } catch (e) {
+      print("Error in deleteUserAccount: ${e.toString()}");
+    }
+  }
+
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      print("Password reset email sent successfully");
+    } catch (e) {
+      print("Error in resetPassword: ${e.toString()}");
+    }
+  }
 }

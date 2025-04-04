@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mis/services/auth_service.dart';
 import 'package:mis/pages/login_screen.dart';
 
@@ -35,7 +37,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
 
     try {
-      await _auth.signUpWithEmailAndPassword(
+      User? user = await _auth.signUpWithEmailAndPassword(
         _emailController.text,
         _passwordController.text,
         _nameController.text,
@@ -51,15 +53,59 @@ class _SignUpScreenState extends State<SignUpScreen> {
         isExhibitor: _isExhibitor,
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      if (user != null) {
+        // Save user details to Firestore
+        FirebaseFirestore firestore = FirebaseFirestore.instance;
+        CollectionReference collection = _isFarmer
+            ? firestore.collection('farmers')
+            : firestore.collection('exhibitors');
+
+        await collection.doc(user.uid).set({
+          'name': _nameController.text,
+          'email': _emailController.text,
+          'phone': _phoneController.text,
+          'location': _locationController.text,
+          if (_isFarmer) ...{
+            'farmName': _farmNameController.text,
+            'farmSize': _farmSizeController.text,
+            'farmingType': _farmingTypeController.text,
+          },
+          if (_isExhibitor) ...{
+            'contact': _contactController.text,
+            'description': _descriptionController.text,
+            'logo': _logoController.text,
+          },
+        });
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Sign up failed: $e')),
       );
     }
+  }
+
+  Widget _buildTextField(
+      {required TextEditingController controller,
+      required String labelText,
+      bool obscureText = false,
+      String? Function(String?)? validator}) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(labelText: labelText),
+      obscureText: obscureText,
+      validator: validator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your $labelText';
+            }
+            return null;
+          },
+    );
   }
 
   @override
@@ -95,149 +141,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 },
               ),
               if (_isFarmer) ...[
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _farmNameController,
-                  decoration: const InputDecoration(labelText: 'Farm Name'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your farm name';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _farmSizeController,
-                  decoration: const InputDecoration(labelText: 'Farm Size'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your farm size';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _farmingTypeController,
-                  decoration: const InputDecoration(labelText: 'Farming Type'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your farming type';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your location';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: const InputDecoration(labelText: 'Phone'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your phone number';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
-                ),
+                _buildTextField(
+                    controller: _emailController, labelText: 'Email'),
+                _buildTextField(
+                    controller: _farmNameController, labelText: 'Farm Name'),
+                _buildTextField(
+                    controller: _farmSizeController, labelText: 'Farm Size'),
+                _buildTextField(
+                    controller: _farmingTypeController,
+                    labelText: 'Farming Type'),
+                _buildTextField(
+                    controller: _locationController, labelText: 'Location'),
+                _buildTextField(controller: _nameController, labelText: 'Name'),
+                _buildTextField(
+                    controller: _phoneController, labelText: 'Phone'),
+                _buildTextField(
+                    controller: _passwordController,
+                    labelText: 'Password',
+                    obscureText: true),
               ] else if (_isExhibitor) ...[
-                TextFormField(
-                  controller: _contactController,
-                  decoration: const InputDecoration(labelText: 'Contact'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your contact';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your description';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your location';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _logoController,
-                  decoration: const InputDecoration(labelText: 'Logo'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your logo';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    return null;
-                  },
-                ),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
-                ),
+                _buildTextField(
+                    controller: _emailController, labelText: 'Email'),
+                _buildTextField(
+                    controller: _contactController, labelText: 'Contact'),
+                _buildTextField(
+                    controller: _descriptionController,
+                    labelText: 'Description'),
+                _buildTextField(
+                    controller: _locationController, labelText: 'Location'),
+                _buildTextField(controller: _logoController, labelText: 'Logo'),
+                _buildTextField(controller: _nameController, labelText: 'Name'),
+                _buildTextField(
+                    controller: _passwordController,
+                    labelText: 'Password',
+                    obscureText: true),
               ],
               const SizedBox(height: 20),
               ElevatedButton(
