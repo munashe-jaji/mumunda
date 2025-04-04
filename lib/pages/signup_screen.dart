@@ -77,10 +77,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           },
         });
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sign up successful!')),
         );
+
+        Navigator.pushReplacementNamed(context, LoginScreen.id);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
