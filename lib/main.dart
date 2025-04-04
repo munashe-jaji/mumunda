@@ -21,7 +21,7 @@ void main() async {
         messagingSenderId: "677442321518",
         appId: "1:677442321518:web:2209336e8a38224cfb3a7f",
         storageBucket:
-            "agric-mis.appspot.com", // Add your storage bucket URL here
+            "agric-mis.firebasestorage.app", // Add your storage bucket URL here
       ),
     );
   }

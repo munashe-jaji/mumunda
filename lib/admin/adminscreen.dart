@@ -5,12 +5,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mis/services/auth_service.dart';
 import 'package:mis/pages/login_screen.dart';
-import 'dart:io';
+import 'package:web/web.dart' as web; // Use 'as' prefix for web
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: AdminScreen(email: 'admin@example.com'),
     );
   }
@@ -55,20 +55,12 @@ class AdminScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        body: const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: TabBarView(
             children: [
-              const SizedBox(height: 20),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    ManageEventsPage(),
-                    ApproveExhibitorsPage(),
-                  ],
-                ),
-              ),
+              ManageEventsPage(),
+              ApproveExhibitorsPage(),
             ],
           ),
         ),
@@ -76,7 +68,7 @@ class AdminScreen extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => AddEventScreen()),
+              MaterialPageRoute(builder: (context) => const AddEventScreen()),
             );
           },
           backgroundColor: Colors.green,
@@ -108,32 +100,39 @@ class ManageEventsPage extends StatelessWidget {
               final events = snapshot.data!.docs;
 
               return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                 child: DataTable(
                   columns: const [
                     DataColumn(label: Text('Event Name')),
                     DataColumn(label: Text('Date')),
                     DataColumn(label: Text('Location')),
+                    DataColumn(label: Text('Schedule')),
                     DataColumn(label: Text('Actions')),
                   ],
                   rows: events.map((event) {
+                    final data = event.data() as Map<String, dynamic>;
                     return DataRow(cells: [
-                      DataCell(Text(event['name'])),
-                      DataCell(Text(event['date'])),
-                      DataCell(Text(event['location'])),
+                      DataCell(Text(data['name'] ?? '')),
+                      DataCell(Text(data['date'] ?? '')),
+                      DataCell(Text(data['location'] ?? '')),
+                      DataCell(data['schedule'] != null
+                          ? InkWell(
+                              onTap: () =>
+                                  web.window.open(data['schedule'], '_blank'),
+                              child: const Text('View PDF',
+                                  style: TextStyle(color: Colors.blue)),
+                            )
+                          : const Text('No PDF')),
                       DataCell(Row(
                         children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              // Update event logic
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () async {
+                              await FirebaseFirestore.instance
+                                  .collection('events')
+                                  .doc(event.id)
+                                  .delete();
                             },
-                            child: const Text('Update'),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: () {
-                              // Delete event logic
-                            },
-                            child: const Text('Delete'),
                           ),
                         ],
                       )),
@@ -153,29 +152,26 @@ class AddEventScreen extends StatefulWidget {
   const AddEventScreen({super.key});
 
   @override
-  _AddEventScreenState createState() => _AddEventScreenState();
+  State<AddEventScreen> createState() => _AddEventScreenState();
 }
 
 class _AddEventScreenState extends State<AddEventScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _contactController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _guestsController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
+  final _contactController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _guestsController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _dateController = TextEditingController();
+
   PlatformFile? _pdfFile;
   String? pdfUrl;
 
   Future<void> _pickPDF() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-
+    final result = await FilePicker.platform
+        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     if (result != null) {
-      setState(() {
-        _pdfFile = result.files.first;
-      });
+      setState(() => _pdfFile = result.files.first);
     }
   }
 
@@ -186,9 +182,18 @@ class _AddEventScreenState extends State<AddEventScreen> {
           final storageRef = FirebaseStorage.instance
               .ref()
               .child('schedules/${_pdfFile!.name}');
-          final uploadTask = storageRef.putFile(File(_pdfFile!.path!));
+          final uploadTask = storageRef.putData(_pdfFile!.bytes!);
+
+          // Log the upload task state
+          uploadTask.snapshotEvents.listen((event) {
+            print('Task state: ${event.state}');
+            print(
+                'Progress: ${(event.bytesTransferred / event.totalBytes) * 100} %');
+          });
+
           final snapshot = await uploadTask.whenComplete(() {});
           pdfUrl = await snapshot.ref.getDownloadURL();
+          print('PDF uploaded successfully: $pdfUrl');
         }
 
         await FirebaseFirestore.instance.collection('events').add({
@@ -197,15 +202,15 @@ class _AddEventScreenState extends State<AddEventScreen> {
           'guests': _guestsController.text,
           'location': _locationController.text,
           'name': _nameController.text,
+          'date': _dateController.text,
           'schedule': pdfUrl,
         });
 
         Navigator.pop(context);
       } catch (e) {
         print('Error uploading event: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add event: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to add event: $e')));
       }
     }
   }
@@ -213,9 +218,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Event'),
-      ),
+      appBar: AppBar(title: const Text('Add Event')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -223,108 +226,50 @@ class _AddEventScreenState extends State<AddEventScreen> {
           child: ListView(
             children: [
               TextFormField(
-                controller: _contactController,
-                decoration: const InputDecoration(labelText: 'Contact'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a contact';
-                  }
-                  return null;
-                },
-              ),
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                  validator: _validate),
               TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
-              ),
+                  controller: _dateController,
+                  decoration: const InputDecoration(labelText: 'Date'),
+                  validator: _validate),
               TextFormField(
-                controller: _guestsController,
-                decoration: const InputDecoration(labelText: 'Guests'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter guests';
-                  }
-                  return null;
-                },
-              ),
+                  controller: _locationController,
+                  decoration: const InputDecoration(labelText: 'Location'),
+                  validator: _validate),
               TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(labelText: 'Location'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a location';
-                  }
-                  return null;
-                },
-              ),
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  validator: _validate),
               TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+                  controller: _contactController,
+                  decoration: const InputDecoration(labelText: 'Contact'),
+                  validator: _validate),
+              TextFormField(
+                  controller: _guestsController,
+                  decoration: const InputDecoration(labelText: 'Guests'),
+                  validator: _validate),
+              const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _pickPDF,
-                child: const Text('Upload Schedule (PDF)'),
-              ),
+                  onPressed: _pickPDF,
+                  child: const Text('Upload Schedule PDF')),
               if (_pdfFile != null) Text(_pdfFile!.name),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _uploadEvent,
-                child: const Text('Add Event'),
-              ),
+                  onPressed: _uploadEvent, child: const Text('Add Event')),
             ],
           ),
         ),
       ),
     );
   }
+
+  String? _validate(String? value) =>
+      (value == null || value.isEmpty) ? 'Required' : null;
 }
 
-class ApproveExhibitorsPage extends StatefulWidget {
+class ApproveExhibitorsPage extends StatelessWidget {
   const ApproveExhibitorsPage({super.key});
-
-  @override
-  _ApproveExhibitorsPageState createState() => _ApproveExhibitorsPageState();
-}
-
-class _ApproveExhibitorsPageState extends State<ApproveExhibitorsPage> {
-  final List<String> availableBooths = ['Booth 1', 'Booth 2', 'Booth 3'];
-  final List<Map<String, String>> exhibitors = [
-    {
-      'name': 'Exhibitor 1',
-      'contact': '123-456-7890',
-      'email': 'exhibitor1@example.com'
-    },
-    // Add more exhibitors here
-  ];
-
-  void _approveExhibitor(int index) {
-    if (availableBooths.isNotEmpty) {
-      final assignedBooth = availableBooths.removeAt(0);
-      setState(() {
-        exhibitors[index]['booth'] = assignedBooth;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Exhibitor approved and assigned to $assignedBooth')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No available booths')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -334,40 +279,62 @@ class _ApproveExhibitorsPageState extends State<ApproveExhibitorsPage> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 20),
         Expanded(
-          child: SingleChildScrollView(
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Name')),
-                DataColumn(label: Text('Contact')),
-                DataColumn(label: Text('Email')),
-                DataColumn(label: Text('Actions')),
-              ],
-              rows: exhibitors.map((exhibitor) {
-                final index = exhibitors.indexOf(exhibitor);
-                return DataRow(cells: [
-                  DataCell(Text(exhibitor['name']!)),
-                  DataCell(Text(exhibitor['contact']!)),
-                  DataCell(Text(exhibitor['email']!)),
-                  DataCell(Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          _approveExhibitor(index);
-                        },
-                        child: const Text('Approve'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Reject exhibitor logic
-                        },
-                        child: const Text('Reject'),
-                      ),
-                    ],
-                  )),
-                ]);
-              }).toList(),
-            ),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('exhibitors')
+                .where('status', isEqualTo: 'pending')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final exhibitors = snapshot.data!.docs;
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Name')),
+                    DataColumn(label: Text('Email')),
+                    DataColumn(label: Text('Phone')),
+                    DataColumn(label: Text('Actions')),
+                  ],
+                  rows: exhibitors.map((ex) {
+                    final data = ex.data() as Map<String, dynamic>;
+                    return DataRow(cells: [
+                      DataCell(Text(data['name'] ?? '')),
+                      DataCell(Text(data['email'] ?? '')),
+                      DataCell(Text(data['phone'] ?? '')),
+                      DataCell(Row(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              await FirebaseFirestore.instance
+                                  .collection('exhibitors')
+                                  .doc(ex.id)
+                                  .update({'status': 'approved'});
+                            },
+                            child: const Text('Approve'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await FirebaseFirestore.instance
+                                  .collection('exhibitors')
+                                  .doc(ex.id)
+                                  .update({'status': 'rejected'});
+                            },
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red),
+                            child: const Text('Reject'),
+                          ),
+                        ],
+                      )),
+                    ]);
+                  }).toList(),
+                ),
+              );
+            },
           ),
         ),
       ],
