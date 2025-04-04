@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'pages/splash_screen.dart';
@@ -11,13 +12,20 @@ import 'pages/exhibitors_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
+
+  if (kIsWeb) {
+    await Firebase.initializeApp(
       options: FirebaseOptions(
-    apiKey: "AIzaSyA6Y1jSfpg0FMUQPlUBmok6UUy6pe-49P0",
-    projectId: "agric-mis",
-    messagingSenderId: "677442321518",
-    appId: "1:677442321518:web:2209336e8a38224cfb3a7f",
-  ));
+        apiKey: "AIzaSyA6Y1jSfpg0FMUQPlUBmok6UUy6pe-49P0",
+        projectId: "agric-mis",
+        messagingSenderId: "677442321518",
+        appId: "1:677442321518:web:2209336e8a38224cfb3a7f",
+        storageBucket:
+            "agric-mis.appspot.com", // Add your storage bucket URL here
+      ),
+    );
+  }
+
   runApp(const MyApp());
 }
 
