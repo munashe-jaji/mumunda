@@ -188,4 +188,27 @@ class AuthService {
       print("Error in resetPassword: ${e.toString()}");
     }
   }
+
+  Future<void> addProduct({
+    required String name,
+    required String description,
+    required double price,
+    required String category,
+    required String imageUrl,
+  }) async {
+    try {
+      Map<String, dynamic> productData = {
+        'name': name,
+        'description': description,
+        'price': price,
+        'category': category,
+        'imageUrl': imageUrl,
+      };
+
+      await FirebaseFirestore.instance.collection('products').add(productData);
+      print("Product added successfully");
+    } catch (e) {
+      print("Error in addProduct: ${e.toString()}");
+    }
+  }
 }

@@ -28,42 +28,81 @@ class ExhibitorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Exhibitor Dashboard'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () async {
-                // Add your sign out logic here
-              },
-            ),
-          ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Add Products'),
-              Tab(text: 'Edit Products'),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Exhibitor Dashboard'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              // Add your sign out logic here
+            },
           ),
-        ),
-        body: const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: TabBarView(
-            children: [
-              AddProductsPage(),
-              EditProductsPage(),
-            ],
-          ),
-        ),
+        ],
+      ),
+      body: ProductsPage(email: email),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => AddProductsPage(email: email)),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
 }
 
+class ProductsPage extends StatelessWidget {
+  final String email;
+
+  const ProductsPage({super.key, required this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('products')
+          .where('email', isEqualTo: email)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final products = snapshot.data!.docs;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('Name')),
+              DataColumn(label: Text('Price')),
+              DataColumn(label: Text('Description')),
+              DataColumn(label: Text('Quantity')),
+            ],
+            rows: products.map((product) {
+              final data = product.data() as Map<String, dynamic>;
+              return DataRow(cells: [
+                DataCell(Text(data['name'] ?? '')),
+                DataCell(Text(data['price'] ?? '')),
+                DataCell(Text(data['description'] ?? '')),
+                DataCell(Text(data['quantity'] ?? '')),
+              ]);
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class AddProductsPage extends StatefulWidget {
-  const AddProductsPage({super.key});
+  final String email;
+
+  const AddProductsPage({super.key, required this.email});
 
   @override
   State<AddProductsPage> createState() => _AddProductsPageState();
@@ -74,6 +113,8 @@ class _AddProductsPageState extends State<AddProductsPage> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _quantityController = TextEditingController();
+  final _exhibitorController = TextEditingController();
 
   PlatformFile? _imageFile;
   String? imageUrl;
@@ -102,10 +143,13 @@ class _AddProductsPageState extends State<AddProductsPage> {
           'name': _nameController.text,
           'price': _priceController.text,
           'description': _descriptionController.text,
+          'quantity': _quantityController.text,
+          'exhibitor': _exhibitorController.text,
           'image': imageUrl,
+          'email': widget.email, // Use the email passed to the widget
         });
 
-        Navigator.pop(context);
+        Navigator.pop(context); // This will navigate back to ExhibitorScreen
       } catch (e) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('Failed to add product: $e')));
@@ -115,65 +159,45 @@ class _AddProductsPageState extends State<AddProductsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        children: [
-          TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-              validator: (value) => value!.isEmpty ? 'Required' : null),
-          TextFormField(
-              controller: _priceController,
-              decoration: const InputDecoration(labelText: 'Price'),
-              validator: (value) => value!.isEmpty ? 'Required' : null),
-          TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
-              validator: (value) => value!.isEmpty ? 'Required' : null),
-          const SizedBox(height: 16),
-          ElevatedButton(
-              onPressed: _pickImage, child: const Text('Upload Image')),
-          if (_imageFile != null) Text(_imageFile!.name),
-          const SizedBox(height: 16),
-          ElevatedButton(
-              onPressed: _uploadProduct, child: const Text('Add Product')),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add Product'),
       ),
-    );
-  }
-}
-
-class EditProductsPage extends StatelessWidget {
-  const EditProductsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('products').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final products = snapshot.data!.docs;
-
-        return ListView(
-          children: products.map((product) {
-            final data = product.data() as Map<String, dynamic>;
-            return ListTile(
-              title: Text(data['name'] ?? ''),
-              subtitle: Text(data['price'] ?? ''),
-              trailing: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () {
-                  // Add your edit product logic here
-                },
-              ),
-            );
-          }).toList(),
-        );
-      },
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+                validator: (value) => value!.isEmpty ? 'Required' : null),
+            TextFormField(
+                controller: _priceController,
+                decoration: const InputDecoration(labelText: 'Price'),
+                validator: (value) => value!.isEmpty ? 'Required' : null),
+            TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'Description'),
+                validator: (value) => value!.isEmpty ? 'Required' : null),
+            TextFormField(
+                controller: _quantityController,
+                decoration: const InputDecoration(labelText: 'Quantity'),
+                validator: (value) => value!.isEmpty ? 'Required' : null),
+            TextFormField(
+                controller: _exhibitorController,
+                decoration: const InputDecoration(labelText: 'Exhibitor'),
+                validator: (value) => value!.isEmpty ? 'Required' : null),
+            const SizedBox(height: 16),
+            ElevatedButton(
+                onPressed: _pickImage, child: const Text('Upload Image')),
+            if (_imageFile != null) Text(_imageFile!.name),
+            const SizedBox(height: 16),
+            ElevatedButton(
+                onPressed: _uploadProduct, child: const Text('Add Product')),
+          ],
+        ),
+      ),
     );
   }
 }
