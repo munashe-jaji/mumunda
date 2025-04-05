@@ -45,7 +45,10 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Mumunda'),
+            Image.asset(
+              'assets/images/logo.png', // Path to your logo image
+              height: 100, // Adjust the height as needed
+            ),
             Text(widget.email), // Display the email
           ],
         ),
