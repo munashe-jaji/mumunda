@@ -28,26 +28,53 @@ class _LoginScreenState extends State<LoginScreen> {
           .doc(user.uid)
           .get();
       final role = userDoc.data()?['role'] ?? 'user';
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login Successful')),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) {
-            if (role == 'admin') {
-              return AdminScreen(email: email);
-            } else if (role == 'exhibitor') {
-              return ExhibitorScreen(email: email);
-            } else {
-              return HomeScreen(email: email);
-            }
-          },
+
+      // Show success dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Login Successful'),
+          content: const Text('You have successfully logged in.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) {
+                      if (role == 'admin') {
+                        return AdminScreen(email: email);
+                      } else if (role == 'exhibitor') {
+                        return ExhibitorScreen(email: email);
+                      } else {
+                        return HomeScreen(email: email);
+                      }
+                    },
+                  ),
+                );
+              },
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login Failed')),
+      // Show failure dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Login Failed'),
+          content: const Text('Invalid email or password.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
     }
   }
