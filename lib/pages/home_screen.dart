@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth for logout functionality
+import 'package:mis/pages/login_screen.dart';
+import 'package:mis/services/auth_service.dart'; // Import FirebaseAuth for logout functionality
 import 'dart:async';
 import 'package:mis/pages/exhibitors_screen.dart';
 import 'package:mis/pages/map_screen.dart';
@@ -50,20 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 100, // Adjust the height as needed
             ), // Display the email
             IconButton(
-              icon: const Icon(Icons.logout), // Logout icon
+              icon: const Icon(Icons.logout),
               onPressed: () async {
-                try {
-                  // Log out the user
-                  await FirebaseAuth.instance.signOut();
-
-                  // Navigate to the login screen
-                  Navigator.pushReplacementNamed(context, '/login');
-                } catch (e) {
-                  // Show an error message if logout fails
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error logging out: $e')),
-                  );
-                }
+                await AuthService().signOut();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
               },
             ),
           ],
