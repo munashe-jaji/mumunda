@@ -281,8 +281,8 @@ class ApproveExhibitorsPage extends StatelessWidget {
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
-                .collection('exhibitors')
-                .where('status', isEqualTo: 'pending')
+                .collection('users')
+                .where('role', isEqualTo: 'exhibitor') // Filter by role
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
@@ -310,7 +310,7 @@ class ApproveExhibitorsPage extends StatelessWidget {
                           ElevatedButton(
                             onPressed: () async {
                               await FirebaseFirestore.instance
-                                  .collection('exhibitors')
+                                  .collection('users')
                                   .doc(ex.id)
                                   .update({'status': 'approved'});
                             },
@@ -319,10 +319,11 @@ class ApproveExhibitorsPage extends StatelessWidget {
                           const SizedBox(width: 8),
                           ElevatedButton(
                             onPressed: () async {
+                              // Delete the exhibitor's account and data
                               await FirebaseFirestore.instance
-                                  .collection('exhibitors')
+                                  .collection('users')
                                   .doc(ex.id)
-                                  .update({'status': 'rejected'});
+                                  .delete();
                             },
                             style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red),

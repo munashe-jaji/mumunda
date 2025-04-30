@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mis/pages/login_screen.dart';
+import 'package:mis/services/auth_service.dart'; // Import FirebaseAuth for logout functionality
 import 'dart:async';
 import 'package:mis/pages/exhibitors_screen.dart';
 import 'package:mis/pages/map_screen.dart';
-import 'package:mis/pages/marketplace_screen.dart';
-import 'package:mis/pages/products_screen.dart';
+import 'package:mis/pages/marketplace_screen.dart'; // Renamed ProductsScreen to MarketplaceScreen
 
 class HomeScreen extends StatefulWidget {
   final String email;
@@ -25,9 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _widgetOptions = <Widget>[
       const HomeScreenContent(),
-      ProductsScreen(userEmail: widget.email),
+      MarketplaceScreen(), // Updated to MarketplaceScreen
       const MapScreen(),
-      const MarketplaceScreen(),
       const ExhibitorsScreen(),
     ];
   }
@@ -42,14 +42,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Removes the back button
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Image.asset(
               'assets/images/logo.png', // Path to your logo image
               height: 100, // Adjust the height as needed
+            ), // Display the email
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await AuthService().signOut();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
             ),
-            Text(widget.email), // Display the email
           ],
         ),
       ),
@@ -62,15 +72,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_bag),
-            label: 'Products',
+            label: 'Marketplace', // Updated label
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
             label: 'Map',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.store),
-            label: 'Marketplace',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),

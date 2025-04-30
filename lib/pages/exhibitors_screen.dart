@@ -9,14 +9,12 @@ class ExhibitorsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Exhibitors'),
-        centerTitle: true,
-      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
             .where('role', isEqualTo: 'exhibitor')
+            .where('status',
+                isEqualTo: 'approved') // Filter for approved exhibitors
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
