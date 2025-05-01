@@ -132,38 +132,63 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
-        // Event Banner
-        Container(
-          height: 200,
-          color: const Color.fromARGB(255, 38, 163, 0),
-          child: PageView(
-            controller: _pageController,
-            children: const [
-              BannerItem(text: 'Guest Speaker: Sir Manango'),
-              BannerItem(text: 'Workshop: Mashonaland West Trade Show'),
-              BannerItem(text: 'Special Exhibit: AI Innovations'),
-            ],
+        // Background image
+        Positioned.fill(
+          child: Image.asset(
+            'assets/images/tractor.jpg', // Path to your background image
+            fit: BoxFit.cover,
           ),
         ),
-        const SizedBox(height: 20),
-        // Search Bar
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: 'Search products, exhibitors, or workshops',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.0),
+        // Semi-transparent overlay
+        Positioned.fill(
+          child: Container(
+            color: Colors.black.withOpacity(0.5), // Adjust opacity for text visibility
+          ),
+        ),
+        // Page content
+        Column(
+          children: [
+            // Event Banner
+            Container(
+              height: 200,
+              color: const Color.fromARGB(255, 38, 163, 0),
+              child: PageView(
+                controller: _pageController,
+                children: const [
+                  BannerItem(text: 'Guest Speaker: Sir Manango'),
+                  BannerItem(text: 'Workshop: Mashonaland West Trade Show'),
+                  BannerItem(text: 'Special Exhibit: AI Innovations'),
+                ],
               ),
             ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        const Center(
-          child: Text('Welcome to the Home Page!'),
+            const SizedBox(height: 20),
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search products, exhibitors, or workshops',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Center(
+              child: Text(
+                'Welcome to the Home Page!',
+                style: TextStyle(
+                  color: Colors.white, // Ensure text is visible
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
