@@ -75,7 +75,6 @@ flutter:
     - assets/images/tractor.jpg
     - assets/images/login.jpg
     - assets/images/exhibitorsbc.jpg
-    - assets/images/exhibitordetailsbc.jpg
     - assets/images/productsbc.jpg
     - assets/images/mapbc.jpg
   #   - images/a_dot_ham.jpeg

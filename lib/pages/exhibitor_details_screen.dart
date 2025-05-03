@@ -49,7 +49,7 @@ class _ExhibitorDetailsScreenState extends State<ExhibitorDetailsScreen> {
           // Background image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/exhibitordetails bc.jpg', // Path to your background image
+              'assets/images/exhibitorsbc.jpg', // Path to your background image
               fit: BoxFit.cover,
             ),
           ),
