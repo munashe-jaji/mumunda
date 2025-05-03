@@ -21,62 +21,65 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    final user = await _auth.signInWithEmailAndPassword(email, password);
-    if (user != null) {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final role = userDoc.data()?['role'] ?? 'user';
 
-      // Show success dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Login Successful'),
-          content: const Text('You have successfully logged in.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      if (role == 'admin') {
-                        return AdminScreen(email: email);
-                      } else if (role == 'exhibitor') {
-                        return ExhibitorScreen(email: email);
-                      } else {
-                        return HomeScreen(email: email);
-                      }
-                    },
-                  ),
-                );
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // Show failure dialog
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Login Failed'),
-          content: const Text('Invalid email or password.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+    try {
+      final user = await _auth.signInWithEmailAndPassword(email, password);
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        final role = userDoc.data()?['role'] ?? 'user';
+
+        // Automatically navigate to the appropriate page
+        if (mounted) {
+          if (role == 'admin') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AdminScreen(email: email),
+              ),
+            );
+          } else if (role == 'exhibitor') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ExhibitorScreen(email: email),
+              ),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomeScreen(email: email),
+              ),
+            );
+          }
+        }
+      } else {
+        _showErrorDialog('Invalid email or password.');
+      }
+    } catch (e) {
+      _showErrorDialog('An error occurred. Please try again.');
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login Failed'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
