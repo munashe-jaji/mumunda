@@ -1,39 +1,39 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 import 'package:mis/services/auth_service.dart';
 import 'package:mis/pages/login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   static String id = 'signup_screen';
+
   const SignUpScreen({super.key});
 
   @override
-  _SignUpScreenState createState() => _SignUpScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final AuthService _auth = AuthService();
   final _formKey = GlobalKey<FormState>();
-
+  final AuthService _auth = AuthService();
   int _stepIndex = 0;
 
-  // Common fields
+  // Common
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
 
-  // Farmer fields
+  // Farmer
   final _farmNameController = TextEditingController();
   final _farmSizeController = TextEditingController();
   String? _selectedFarmingType;
 
-  // Exhibitor fields
+  // Exhibitor
   final _contactController = TextEditingController();
   final _descriptionController = TextEditingController();
   File? _logoFile;
@@ -42,6 +42,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isFarmer = false;
   bool _isExhibitor = false;
 
+  // Helpers
   Future<void> _pickLogo() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null && result.files.single.path != null) {
@@ -51,7 +52,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> _uploadLogo(String uid) async {
     if (_logoFile == null) return;
-
     final ref = FirebaseStorage.instance.ref().child('logos/$uid.jpg');
     await ref.putFile(_logoFile!);
     _logoUrl = await ref.getDownloadURL();
@@ -79,7 +79,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (user != null) {
         await _uploadLogo(user.uid);
-        FirebaseFirestore firestore = FirebaseFirestore.instance;
+        final firestore = FirebaseFirestore.instance;
         final collection = _isFarmer
             ? firestore.collection('farmers')
             : firestore.collection('exhibitors');
@@ -105,7 +105,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Sign up successful!')),
         );
-
         Navigator.pushReplacementNamed(context, LoginScreen.id);
       }
     } catch (e) {
@@ -117,13 +116,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Widget _buildTextField(TextEditingController controller, String labelText,
       {bool obscure = false, String? Function(String?)? validator}) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(labelText: labelText),
-      obscureText: obscure,
-      validator: validator ??
-          (value) =>
-              value == null || value.isEmpty ? 'Enter your $labelText' : null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: labelText,
+          border: const OutlineInputBorder(),
+        ),
+        obscureText: obscure,
+        validator: validator ??
+            (value) =>
+                value == null || value.isEmpty ? 'Enter your $labelText' : null,
+      ),
     );
   }
 
@@ -134,8 +139,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            spacing: 12,
+            alignment: WrapAlignment.center,
             children: [
               ChoiceChip(
                 label: const Text('Farmer'),
@@ -148,7 +154,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   });
                 },
               ),
-              const SizedBox(width: 12),
               ChoiceChip(
                 label: const Text('Exhibitor'),
                 selected: _isExhibitor,
@@ -215,13 +220,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   'Horticulture'
                                 ]
                                     .map((type) => DropdownMenuItem(
-                                        value: type, child: Text(type)))
+                                          value: type,
+                                          child: Text(type),
+                                        ))
                                     .toList(),
-                                onChanged: (value) {
-                                  setState(() => _selectedFarmingType = value);
-                                },
+                                onChanged: (value) => setState(
+                                    () => _selectedFarmingType = value),
                                 decoration: const InputDecoration(
-                                    labelText: "Farming Type"),
+                                  labelText: "Farming Type",
+                                  border: OutlineInputBorder(),
+                                ),
                                 validator: (value) => _isFarmer && value == null
                                     ? "Select your farming type"
                                     : null,
@@ -238,14 +246,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               _buildTextField(_contactController, "Contact"),
                               _buildTextField(
                                   _descriptionController, "Description"),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                               ElevatedButton.icon(
                                 onPressed: _pickLogo,
-                                icon: const Icon(Icons.upload),
+                                icon: const Icon(Icons.upload_file),
                                 label: const Text("Upload Logo"),
                               ),
                               if (_logoFile != null)
-                                Text("Logo selected: ${_logoFile!.path}"),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    "Selected: ${_logoFile!.path.split('/').last}",
+                                    style: const TextStyle(
+                                        fontSize: 12, color: Colors.green),
+                                  ),
+                                ),
                             ],
                           )
                         : const Text("Not applicable"),
