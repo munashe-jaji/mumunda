@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mis/services/auth_service.dart';
 import 'package:mis/pages/login_screen.dart';
+import 'dart:typed_data';
 
 class SignUpScreen extends StatefulWidget {
   static String id = 'signup_screen';
@@ -36,27 +37,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
   // Exhibitor
   final _contactController = TextEditingController();
   final _descriptionController = TextEditingController();
-  File? _logoFile;
+
+  Uint8List? _logoBytes;
+  String? _logoFileName;
   String? _logoUrl;
 
   bool _isFarmer = false;
   bool _isExhibitor = false;
 
-  // Helpers
+  // === Pick Logo (Web + Mobile Compatible) ===
   Future<void> _pickLogo() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null && result.files.single.path != null) {
-      setState(() => _logoFile = File(result.files.single.path!));
+    if (result != null && result.files.single.bytes != null) {
+      setState(() {
+        _logoBytes = result.files.single.bytes;
+        _logoFileName = result.files.single.name;
+      });
     }
   }
 
+  // === Upload to Firebase Storage ===
   Future<void> _uploadLogo(String uid) async {
-    if (_logoFile == null) return;
+    if (_logoBytes == null) return;
+
     final ref = FirebaseStorage.instance.ref().child('logos/$uid.jpg');
-    await ref.putFile(_logoFile!);
+    await ref.putData(_logoBytes!, SettableMetadata(contentType: 'image/jpeg'));
     _logoUrl = await ref.getDownloadURL();
   }
 
+  // === Sign Up Process ===
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -79,10 +88,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (user != null) {
         await _uploadLogo(user.uid);
-        final firestore = FirebaseFirestore.instance;
-        final collection = _isFarmer
-            ? firestore.collection('farmers')
-            : firestore.collection('exhibitors');
+
+        final collection = FirebaseFirestore.instance
+            .collection(_isFarmer ? 'farmers' : 'exhibitors');
 
         await collection.doc(user.uid).set({
           'name': _nameController.text.trim(),
@@ -252,11 +260,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 icon: const Icon(Icons.upload_file),
                                 label: const Text("Upload Logo"),
                               ),
-                              if (_logoFile != null)
+                              if (_logoFileName != null)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8.0),
                                   child: Text(
-                                    "Selected: ${_logoFile!.path.split('/').last}",
+                                    "Selected: $_logoFileName",
                                     style: const TextStyle(
                                         fontSize: 12, color: Colors.green),
                                   ),
