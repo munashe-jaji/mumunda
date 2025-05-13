@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MarketplaceScreen extends StatefulWidget {
   const MarketplaceScreen({super.key});
+
   static String id = 'marketplace_screen';
 
   @override
@@ -10,7 +11,7 @@ class MarketplaceScreen extends StatefulWidget {
 }
 
 class _MarketplaceScreenState extends State<MarketplaceScreen> {
-  String selectedCategory = 'All';
+  List<Map<String, dynamic>> allProducts = [];
   final List<String> categories = [
     'All',
     'Vegetables',
@@ -18,7 +19,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     'Farm Implements'
   ];
 
-  List<Map<String, dynamic>> allProducts = [];
+  String selectedCategory = 'All';
 
   @override
   void initState() {
@@ -27,62 +28,60 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   }
 
   Future<void> fetchProducts() async {
-    // Step 1: Get all approved exhibitors
-    final QuerySnapshot exhibitorSnapshot = await FirebaseFirestore.instance
-        .collection('exhibitors')
-        .where('status', isEqualTo: 'approved')
-        .get();
+    try {
+      final exhibitorSnapshot = await FirebaseFirestore.instance
+          .collection('exhibitors')
+          .where('status', isEqualTo: 'approved')
+          .get();
 
-    final approvedEmails =
-        exhibitorSnapshot.docs.map((doc) => doc['email'] as String).toSet();
+      final approvedNames =
+          exhibitorSnapshot.docs.map((doc) => doc['name'] as String).toSet();
 
-    // Step 2: Get all products
-    final QuerySnapshot productSnapshot =
-        await FirebaseFirestore.instance.collection('products').get();
+      final productSnapshot =
+          await FirebaseFirestore.instance.collection('products').get();
 
-    final List<Map<String, dynamic>> products = productSnapshot.docs
-        .where((doc) => approvedEmails.contains(doc['email']))
-        .map((doc) {
-      return {
-        'image': doc['image'],
-        'name': doc['name'],
-        'description': doc['description'],
-        'price': doc['price'],
-        'seller': doc['exhibitor'], // renamed field
-        'quantity': doc['quantity'],
-        'category': doc.data().containsKey('category')
-            ? doc['category']
-            : 'Uncategorized',
-        'contact': doc.data().containsKey('contact') ? doc['contact'] : 'N/A',
-        'ownerType': 'Exhibitor',
-      };
-    }).toList();
+      final List<Map<String, dynamic>> products = productSnapshot.docs
+          .where((doc) => approvedNames.contains(doc['exhibitor']))
+          .map((doc) {
+        final data = doc.data();
 
-    setState(() {
-      allProducts = products;
-    });
+        return {
+          'id': doc.id,
+          'image': data['image'],
+          'name': data['name'],
+          'price': data['price'],
+          'description': data['description'],
+          'exhibitor': data['exhibitor'],
+          'quantity': data['quantity'],
+          'contact': data['contact'],
+          'category': data['category'],
+        };
+      }).toList();
+
+      setState(() {
+        allProducts = products;
+      });
+    } catch (e) {
+      print('Error fetching products: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     List<Map<String, dynamic>> filteredProducts = selectedCategory == 'All'
         ? allProducts
-        : allProducts
-            .where((product) => product['category'] == selectedCategory)
-            .toList();
+        : allProducts.where((p) => p['category'] == selectedCategory).toList();
 
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF1FDF3), // Light greenish-white background
+      backgroundColor: const Color(0xFFF1FDF3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32), // Darker green
+        backgroundColor: const Color(0xFF2E7D32),
         title: const Text('Marketplace'),
       ),
       body: Column(
         children: [
-          // Category Dropdown
           Container(
-            color: const Color(0xFFB9F6CA), // Soft green background
+            color: const Color(0xFFB9F6CA),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
@@ -95,12 +94,12 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     iconEnabledColor: Colors.green[800],
                     dropdownColor: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    onChanged: (String? newValue) {
+                    onChanged: (newValue) {
                       setState(() {
                         selectedCategory = newValue!;
                       });
                     },
-                    items: categories.map((String category) {
+                    items: categories.map((category) {
                       return DropdownMenuItem<String>(
                         value: category,
                         child: Text(category),
@@ -111,133 +110,57 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               ],
             ),
           ),
-
-          // Product Cards
           Expanded(
             child: filteredProducts.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No products found.',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  )
+                ? const Center(child: Text('No products found.'))
                 : ListView.builder(
                     itemCount: filteredProducts.length,
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
+
                       return Card(
-                        color: Colors.white,
                         margin: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: 3,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Image and Info Row
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: product['image'] != null
-                                        ? Image.network(
-                                            product['image'],
-                                            height: 80,
-                                            width: 80,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Container(
-                                            height: 80,
-                                            width: 80,
-                                            color: Colors.grey[300],
-                                            child: const Icon(
-                                                Icons.image_not_supported),
-                                          ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          product['name'] ?? 'No Name',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          product['description'] ??
-                                              'No Description',
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontSize: 13),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 16,
-                                runSpacing: 4,
-                                children: [
-                                  Text('💲 Price: \$${product['price']}'),
-                                  Text('📦 Qty: ${product['quantity']}'),
-                                  Text('👤 ${product['ownerType']}'),
-                                  Text('📞 ${product['contact']}'),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => DiscussionForum(
-                                              productOwner: product['seller']),
-                                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(10),
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: product['image'] != null
+                                ? Image.network(
+                                    product['image'],
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 60,
+                                        height: 60,
+                                        color: Colors.grey[300],
+                                        child: const Icon(Icons.broken_image),
                                       );
                                     },
-                                    icon: const Icon(Icons.forum),
-                                    label: const Text('Discuss'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green[700],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  OutlinedButton.icon(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              DirectChatScreen(
-                                            contact: product['contact'],
-                                            ownerType: product['ownerType'],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.message),
-                                    label: const Text('Message'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.green[800],
-                                    ),
-                                  ),
-                                ],
-                              )
-                            ],
+                                  )
+                                : const Icon(Icons.image_not_supported),
+                          ),
+                          title: Text(product['name'] ?? 'No Name'),
+                          subtitle: Text('Price: \$${product['price']}'),
+                          trailing: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ProductDetailsScreen(product: product),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[700],
+                            ),
+                            child: const Text('View'),
                           ),
                         ),
                       );
@@ -250,39 +173,59 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   }
 }
 
-class DiscussionForum extends StatelessWidget {
-  final String productOwner;
+// -----------------------------------------
+// ✅ Simple ProductDetailsScreen for View
+// -----------------------------------------
+class ProductDetailsScreen extends StatelessWidget {
+  const ProductDetailsScreen({super.key, required this.product});
 
-  const DiscussionForum({super.key, required this.productOwner});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Discussion Forum'),
-      ),
-      body: Center(
-        child: Text('Discussion forum for $productOwner'),
-      ),
-    );
-  }
-}
-
-class DirectChatScreen extends StatelessWidget {
-  final String contact;
-  final String ownerType;
-
-  const DirectChatScreen(
-      {super.key, required this.contact, required this.ownerType});
+  final Map<String, dynamic> product;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Direct Chat'),
+        title: Text(product['name'] ?? 'Product Details'),
+        backgroundColor: Colors.green[800],
       ),
-      body: Center(
-        child: Text('Chat with $ownerType at $contact'),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            product['image'] != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      product['image'],
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 100),
+                    ),
+                  )
+                : const Icon(Icons.image_not_supported, size: 100),
+            const SizedBox(height: 16),
+            Text(
+              product['name'] ?? 'No Name',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text('Price: \$${product['price'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 10),
+            Text('Quantity: ${product['quantity'] ?? 'N/A'}'),
+            const SizedBox(height: 10),
+            Text('Category: ${product['category'] ?? 'N/A'}'),
+            const SizedBox(height: 10),
+            Text('Exhibitor: ${product['exhibitor'] ?? 'N/A'}'),
+            const SizedBox(height: 10),
+            Text('Contact: ${product['contact'] ?? 'N/A'}'),
+            const SizedBox(height: 10),
+            Text('Description: ${product['description'] ?? 'N/A'}'),
+          ],
+        ),
       ),
     );
   }

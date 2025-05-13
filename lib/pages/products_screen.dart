@@ -20,19 +20,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
           // Background image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/fruits.jpg', // Path to your background image
+              'assets/images/fruits.jpg', // Replace with your background image
               fit: BoxFit.cover,
             ),
           ),
           // Semi-transparent overlay
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.5), // Adjust opacity for text visibility
+              color: Colors.black.withOpacity(0.5),
             ),
           ),
           // Page content
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('products').snapshots(),
+            stream:
+                FirebaseFirestore.instance.collection('products').snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -45,50 +46,42 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                 );
               }
+
               final products = snapshot.data!.docs;
               return ListView.builder(
                 itemCount: products.length,
                 itemBuilder: (context, index) {
-                  final product = products[index].data() as Map<String, dynamic>;
-                  return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.all(10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            product['name'] ?? 'No Name',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Price: \$${product['price'] ?? 'N/A'}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Quantity: ${product['quantity'] ?? 'N/A'}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Owner Type: ${product['ownerType'] ?? 'N/A'}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Contact: ${product['contact'] ?? 'N/A'}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ],
+                  final product =
+                      products[index].data() as Map<String, dynamic>;
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ProductDetailsScreen(product: product),
+                        ),
+                      );
+                    },
+                    child: Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.all(10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ListTile(
+                        leading: product['image'] != null
+                            ? Image.network(
+                                product['image'],
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                              )
+                            : const Icon(Icons.image),
+                        title: Text(product['name'] ?? 'No Name'),
+                        subtitle: Text('Price: \$${product['price'] ?? 'N/A'}'),
+                        trailing: const Icon(Icons.arrow_forward_ios),
                       ),
                     ),
                   );
@@ -97,6 +90,59 @@ class _ProductsScreenState extends State<ProductsScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ProductDetailsScreen extends StatelessWidget {
+  final Map<String, dynamic> product;
+
+  const ProductDetailsScreen({super.key, required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(product['name'] ?? 'Product Details'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
+          children: [
+            if (product['image'] != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  product['image'],
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            const SizedBox(height: 16),
+            Text('🛍️ Name: ${product['name'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 8),
+            Text('💲 Price: \$${product['price'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            Text(
+                '📝 Description: ${product['description'] ?? 'No Description'}',
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            Text('📦 Quantity: ${product['quantity'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            Text('👤 Seller: ${product['exhibitor'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            Text('📞 Contact: ${product['contact'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 8),
+            Text('📂 Category: ${product['category'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 16)),
+          ],
+        ),
       ),
     );
   }
