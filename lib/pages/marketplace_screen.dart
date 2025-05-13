@@ -27,19 +27,34 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   }
 
   Future<void> fetchProducts() async {
-    final QuerySnapshot snapshot =
+    // Step 1: Get all approved exhibitors
+    final QuerySnapshot exhibitorSnapshot = await FirebaseFirestore.instance
+        .collection('exhibitors')
+        .where('status', isEqualTo: 'approved')
+        .get();
+
+    final approvedEmails =
+        exhibitorSnapshot.docs.map((doc) => doc['email'] as String).toSet();
+
+    // Step 2: Get all products
+    final QuerySnapshot productSnapshot =
         await FirebaseFirestore.instance.collection('products').get();
-    final List<Map<String, dynamic>> products = snapshot.docs.map((doc) {
+
+    final List<Map<String, dynamic>> products = productSnapshot.docs
+        .where((doc) => approvedEmails.contains(doc['email']))
+        .map((doc) {
       return {
         'image': doc['image'],
         'name': doc['name'],
         'description': doc['description'],
         'price': doc['price'],
-        'seller': doc['seller'],
+        'seller': doc['exhibitor'], // renamed field
         'quantity': doc['quantity'],
-        'category': doc['category'],
-        'contact': doc['contact'],
-        'ownerType': doc['ownerType'], // Farmer or Exhibitor
+        'category': doc.data().containsKey('category')
+            ? doc['category']
+            : 'Uncategorized',
+        'contact': doc.data().containsKey('contact') ? doc['contact'] : 'N/A',
+        'ownerType': 'Exhibitor',
       };
     }).toList();
 
@@ -57,163 +72,177 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             .toList();
 
     return Scaffold(
+      backgroundColor:
+          const Color(0xFFF1FDF3), // Light greenish-white background
       appBar: AppBar(
+        backgroundColor: const Color(0xFF2E7D32), // Darker green
         title: const Text('Marketplace'),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          // Background image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/vegetables.jpg', // Path to your background image
-              fit: BoxFit.cover,
-            ),
-          ),
-          // Semi-transparent overlay
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.5), // Adjust opacity for text visibility
-            ),
-          ),
-          // Page content
-          Column(
-            children: [
-              // Category Filters
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: DropdownButton<String>(
-                  value: selectedCategory,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedCategory = newValue!;
-                    });
-                  },
-                  items: categories
-                      .map<DropdownMenuItem<String>>((String category) {
-                    return DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
+          // Category Dropdown
+          Container(
+            color: const Color(0xFFB9F6CA), // Soft green background
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                const Icon(Icons.filter_list, color: Colors.green),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: selectedCategory,
+                    isExpanded: true,
+                    iconEnabledColor: Colors.green[800],
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedCategory = newValue!;
+                      });
+                    },
+                    items: categories.map((String category) {
+                      return DropdownMenuItem<String>(
+                        value: category,
+                        child: Text(category),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-              // Product Listings
-              Expanded(
-                child: ListView.builder(
-                  itemCount: filteredProducts.length,
-                  itemBuilder: (context, index) {
-                    final product = filteredProducts[index];
-                    return Card(
-                      elevation: 4,
-                      margin: const EdgeInsets.all(10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                product['image'] != null
-                                    ? Image.network(
-                                        product['image'],
-                                        height: 80,
-                                        width: 80,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : const Icon(Icons.image_not_supported),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        product['name'] ?? 'No Name',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        product['description'] ??
-                                            'No Description',
-                                        style: const TextStyle(fontSize: 14),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Price: \$${product['price'] ?? 'N/A'}',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Quantity: ${product['quantity'] ?? 'N/A'}',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Owner Type: ${product['ownerType'] ?? 'N/A'}',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Contact: ${product['contact'] ?? 'N/A'}',
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    // Navigate to discussion forum
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => DiscussionForum(
-                                          productOwner: product['seller'],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.forum),
-                                  label: const Text('Discuss'),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    // Direct communication functionality
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => DirectChatScreen(
-                                          contact: product['contact'],
-                                          ownerType: product['ownerType'],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.message),
-                                  label: const Text('Message'),
-                                ),
-                              ],
-                            ),
-                          ],
+              ],
+            ),
+          ),
+
+          // Product Cards
+          Expanded(
+            child: filteredProducts.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No products found.',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: filteredProducts.length,
+                    itemBuilder: (context, index) {
+                      final product = filteredProducts[index];
+                      return Card(
+                        color: Colors.white,
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+                        elevation: 3,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Image and Info Row
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: product['image'] != null
+                                        ? Image.network(
+                                            product['image'],
+                                            height: 80,
+                                            width: 80,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Container(
+                                            height: 80,
+                                            width: 80,
+                                            color: Colors.grey[300],
+                                            child: const Icon(
+                                                Icons.image_not_supported),
+                                          ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product['name'] ?? 'No Name',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          product['description'] ??
+                                              'No Description',
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 16,
+                                runSpacing: 4,
+                                children: [
+                                  Text('💲 Price: \$${product['price']}'),
+                                  Text('📦 Qty: ${product['quantity']}'),
+                                  Text('👤 ${product['ownerType']}'),
+                                  Text('📞 ${product['contact']}'),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => DiscussionForum(
+                                              productOwner: product['seller']),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.forum),
+                                    label: const Text('Discuss'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green[700],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              DirectChatScreen(
+                                            contact: product['contact'],
+                                            ownerType: product['ownerType'],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.message),
+                                    label: const Text('Message'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.green[800],
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

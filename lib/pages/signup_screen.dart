@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,7 +9,6 @@ import 'dart:typed_data';
 
 class SignUpScreen extends StatefulWidget {
   static String id = 'signup_screen';
-
   const SignUpScreen({super.key});
 
   @override
@@ -22,19 +20,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final AuthService _auth = AuthService();
   int _stepIndex = 0;
 
-  // Common
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _locationController = TextEditingController();
 
-  // Farmer
   final _farmNameController = TextEditingController();
   final _farmSizeController = TextEditingController();
   String? _selectedFarmingType;
 
-  // Exhibitor
   final _contactController = TextEditingController();
   final _descriptionController = TextEditingController();
 
@@ -45,7 +40,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isFarmer = false;
   bool _isExhibitor = false;
 
-  // === Pick Logo (Web + Mobile Compatible) ===
   Future<void> _pickLogo() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null && result.files.single.bytes != null) {
@@ -56,16 +50,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  // === Upload to Firebase Storage ===
   Future<void> _uploadLogo(String uid) async {
     if (_logoBytes == null) return;
-
     final ref = FirebaseStorage.instance.ref().child('logos/$uid.jpg');
     await ref.putData(_logoBytes!, SettableMetadata(contentType: 'image/jpeg'));
     _logoUrl = await ref.getDownloadURL();
   }
 
-  // === Sign Up Process ===
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -125,12 +116,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget _buildTextField(TextEditingController controller, String labelText,
       {bool obscure = false, String? Function(String?)? validator}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
         decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.green[50],
           labelText: labelText,
-          border: const OutlineInputBorder(),
+          labelStyle: const TextStyle(color: Colors.green),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         obscureText: obscure,
         validator: validator ??
@@ -143,141 +139,212 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Sign Up")),
+      backgroundColor: Colors.green[100],
+      appBar: AppBar(
+        title: const Text("Sign Up"),
+        backgroundColor: Colors.green[700],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(children: [
-          Wrap(
-            spacing: 12,
-            alignment: WrapAlignment.center,
-            children: [
-              ChoiceChip(
-                label: const Text('Farmer'),
-                selected: _isFarmer,
-                onSelected: (value) {
-                  setState(() {
-                    _isFarmer = value;
-                    _isExhibitor = !value;
-                    _stepIndex = 0;
-                  });
-                },
-              ),
-              ChoiceChip(
-                label: const Text('Exhibitor'),
-                selected: _isExhibitor,
-                onSelected: (value) {
-                  setState(() {
-                    _isExhibitor = value;
-                    _isFarmer = !value;
-                    _stepIndex = 0;
-                  });
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: Form(
-              key: _formKey,
-              child: Stepper(
-                currentStep: _stepIndex,
-                onStepContinue: () {
-                  if (_stepIndex < 3) {
-                    setState(() => _stepIndex++);
-                  } else {
-                    _signUp();
-                  }
-                },
-                onStepCancel: () {
-                  if (_stepIndex > 0) setState(() => _stepIndex--);
-                },
-                steps: [
-                  Step(
-                    title: const Text("Account Info"),
-                    content: Column(
-                      children: [
-                        _buildTextField(_emailController, "Email"),
-                        _buildTextField(_passwordController, "Password",
-                            obscure: true),
+        child: Card(
+          color: Colors.white,
+          elevation: 6,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Wrap(
+                  spacing: 12,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Farmer'),
+                      selectedColor: Colors.green,
+                      selected: _isFarmer,
+                      onSelected: (value) {
+                        setState(() {
+                          _isFarmer = value;
+                          _isExhibitor = !value;
+                          _stepIndex = 0;
+                        });
+                      },
+                    ),
+                    ChoiceChip(
+                      label: const Text('Exhibitor'),
+                      selectedColor: Colors.green,
+                      selected: _isExhibitor,
+                      onSelected: (value) {
+                        setState(() {
+                          _isExhibitor = value;
+                          _isFarmer = !value;
+                          _stepIndex = 0;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: Stepper(
+                      currentStep: _stepIndex,
+                      onStepContinue: () {
+                        if (_stepIndex < 3) {
+                          setState(() => _stepIndex++);
+                        } else {
+                          _signUp();
+                        }
+                      },
+                      onStepCancel: () {
+                        if (_stepIndex > 0) setState(() => _stepIndex--);
+                      },
+                      controlsBuilder: (context, details) {
+                        return Row(
+                          children: [
+                            ElevatedButton(
+                              onPressed: details.onStepContinue,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                              ),
+                              child: Text(_stepIndex < 3 ? "Next" : "Sign Up"),
+                            ),
+                            const SizedBox(width: 10),
+                            if (_stepIndex > 0)
+                              OutlinedButton(
+                                onPressed: details.onStepCancel,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.green[800],
+                                ),
+                                child: const Text("Back"),
+                              ),
+                          ],
+                        );
+                      },
+                      steps: [
+                        Step(
+                          title: const Text("Account Info"),
+                          content: Column(
+                            children: [
+                              _buildTextField(_emailController, "Email"),
+                              _buildTextField(_passwordController, "Password",
+                                  obscure: true),
+                            ],
+                          ),
+                        ),
+                        Step(
+                          title: const Text("Personal Info"),
+                          content: Column(
+                            children: [
+                              _buildTextField(_nameController, "Name"),
+                              _buildTextField(_phoneController, "Phone"),
+                              _buildTextField(_locationController, "Location"),
+                            ],
+                          ),
+                        ),
+                        Step(
+                          title: const Text("Farmer Info"),
+                          content: _isFarmer
+                              ? Column(
+                                  children: [
+                                    _buildTextField(
+                                        _farmNameController, "Farm Name"),
+                                    _buildTextField(
+                                        _farmSizeController, "Farm Size"),
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedFarmingType,
+                                      items: [
+                                        'Crop Farming',
+                                        'Livestock',
+                                        'Mixed Farming',
+                                        'Horticulture'
+                                      ]
+                                          .map((type) => DropdownMenuItem(
+                                                value: type,
+                                                child: Text(type),
+                                              ))
+                                          .toList(),
+                                      onChanged: (value) => setState(
+                                          () => _selectedFarmingType = value),
+                                      decoration: InputDecoration(
+                                        labelText: "Farming Type",
+                                        filled: true,
+                                        fillColor: Colors.green[50],
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      validator: (value) =>
+                                          _isFarmer && value == null
+                                              ? "Select your farming type"
+                                              : null,
+                                    ),
+                                  ],
+                                )
+                              : const Text("Not applicable"),
+                        ),
+                        Step(
+                          title: const Text("Exhibitor Info"),
+                          content: _isExhibitor
+                              ? Column(
+                                  children: [
+                                    _buildTextField(
+                                        _contactController, "Contact"),
+                                    _buildTextField(
+                                        _descriptionController, "Description"),
+                                    const SizedBox(height: 10),
+                                    ElevatedButton.icon(
+                                      onPressed: _pickLogo,
+                                      icon: const Icon(Icons.upload_file),
+                                      label: const Text("Upload Logo"),
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green),
+                                    ),
+                                    if (_logoFileName != null)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 8.0),
+                                        child: Text(
+                                          "Selected: $_logoFileName",
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.green),
+                                        ),
+                                      ),
+                                  ],
+                                )
+                              : const Text("Not applicable"),
+                        ),
                       ],
                     ),
                   ),
-                  Step(
-                    title: const Text("Personal Info"),
-                    content: Column(
-                      children: [
-                        _buildTextField(_nameController, "Name"),
-                        _buildTextField(_phoneController, "Phone"),
-                        _buildTextField(_locationController, "Location"),
-                      ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Already have an account?"),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, LoginScreen.id);
+                      },
+                      child: const Text(
+                        'Login',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                  Step(
-                    title: const Text("Farmer Info"),
-                    content: _isFarmer
-                        ? Column(
-                            children: [
-                              _buildTextField(_farmNameController, "Farm Name"),
-                              _buildTextField(_farmSizeController, "Farm Size"),
-                              DropdownButtonFormField<String>(
-                                value: _selectedFarmingType,
-                                items: [
-                                  'Crop Farming',
-                                  'Livestock',
-                                  'Mixed Farming',
-                                  'Horticulture'
-                                ]
-                                    .map((type) => DropdownMenuItem(
-                                          value: type,
-                                          child: Text(type),
-                                        ))
-                                    .toList(),
-                                onChanged: (value) => setState(
-                                    () => _selectedFarmingType = value),
-                                decoration: const InputDecoration(
-                                  labelText: "Farming Type",
-                                  border: OutlineInputBorder(),
-                                ),
-                                validator: (value) => _isFarmer && value == null
-                                    ? "Select your farming type"
-                                    : null,
-                              ),
-                            ],
-                          )
-                        : const Text("Not applicable"),
-                  ),
-                  Step(
-                    title: const Text("Exhibitor Info"),
-                    content: _isExhibitor
-                        ? Column(
-                            children: [
-                              _buildTextField(_contactController, "Contact"),
-                              _buildTextField(
-                                  _descriptionController, "Description"),
-                              const SizedBox(height: 10),
-                              ElevatedButton.icon(
-                                onPressed: _pickLogo,
-                                icon: const Icon(Icons.upload_file),
-                                label: const Text("Upload Logo"),
-                              ),
-                              if (_logoFileName != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    "Selected: $_logoFileName",
-                                    style: const TextStyle(
-                                        fontSize: 12, color: Colors.green),
-                                  ),
-                                ),
-                            ],
-                          )
-                        : const Text("Not applicable"),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ]),
+        ),
       ),
     );
   }

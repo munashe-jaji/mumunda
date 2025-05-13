@@ -104,22 +104,19 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
   final PageController _pageController = PageController();
   Timer? _timer;
 
+  final Color primaryGreen = const Color(0xFF2E7D32); // Rich green
+
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
-      if (_pageController.page == 2) {
-        _pageController.animateToPage(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeIn,
-        );
-      } else {
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeIn,
-        );
-      }
+      int nextPage = (_pageController.page?.round() ?? 0) + 1;
+      if (nextPage > 2) nextPage = 0;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     });
   }
 
@@ -132,65 +129,98 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Background image
-        Positioned.fill(
-          child: Image.asset(
-            'assets/images/tractor.jpg', // Path to your background image
-            fit: BoxFit.cover,
-          ),
-        ),
-        // Semi-transparent overlay
-        Positioned.fill(
-          child: Container(
-            color: Colors.black.withOpacity(0.5), // Adjust opacity for text visibility
-          ),
-        ),
-        // Page content
-        Column(
-          children: [
-            // Event Banner
-            Container(
-              height: 200,
-              color: const Color.fromARGB(255, 38, 163, 0),
+    return Container(
+      color: const Color(0xFFF1FDF3), // Light greenish background
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Carousel Banner
+          SizedBox(
+            height: 160,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
               child: PageView(
                 controller: _pageController,
                 children: const [
-                  BannerItem(text: 'Guest Speaker: Sir Manango'),
-                  BannerItem(text: 'Workshop: Mashonaland West Trade Show'),
-                  BannerItem(text: 'Special Exhibit: AI Innovations'),
+                  BannerCard(text: '🎤 Guest Speaker: Sir Manango'),
+                  BannerCard(text: '🛠 Workshop: Trade Show Insights'),
+                  BannerCard(text: '🤖 AI in Farming Exhibition'),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search products, exhibitors, or workshops',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+          ),
+          const SizedBox(height: 20),
+
+          // Search Bar
+          TextField(
+            decoration: InputDecoration(
+              hintText: 'Search products, exhibitors, or workshops...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Welcome card
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 3,
+            color: primaryGreen,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: const [
+                  Text(
+                    'Welcome to Mumunda!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Explore the best of Mashonaland West’s agriculture innovation.',
+                    style: TextStyle(color: Colors.white70),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            const Center(
-              child: Text(
-                'Welcome to the Home Page!',
-                style: TextStyle(
-                  color: Colors.white, // Ensure text is visible
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BannerCard extends StatelessWidget {
+  final String text;
+
+  const BannerCard({required this.text, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFF66BB6A), // Lighter green
+      child: Center(
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
         ),
-      ],
+      ),
     );
   }
 }

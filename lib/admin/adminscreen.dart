@@ -5,7 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:mis/services/auth_service.dart';
 import 'package:mis/pages/login_screen.dart';
-import 'package:web/web.dart' as web; // Use 'as' prefix for web
+import 'package:web/web.dart' as web;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,8 +18,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: AdminScreen(email: 'admin@example.com'),
+    return MaterialApp(
+      theme: ThemeData(
+        primaryColor: Colors.green, // Primary color (green)
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.green, // Green AppBar
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green, // Green buttons
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12), // Rounded corners
+            ),
+          ),
+        ),
+        colorScheme: ColorScheme.fromSwatch(
+          primarySwatch: Colors.green,
+        ).copyWith(
+          secondary: Colors.greenAccent, // Accent color (lighter green)
+        ),
+        textTheme: TextTheme(
+          titleLarge: TextStyle(
+              color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold),
+          bodyMedium:
+              TextStyle(color: Colors.black.withOpacity(0.7), fontSize: 16),
+        ),
+      ),
+      home: const AdminScreen(email: 'admin@example.com'),
     );
   }
 }
@@ -53,6 +78,7 @@ class AdminScreen extends StatelessWidget {
               Tab(text: 'Manage Events'),
               Tab(text: 'Approve Exhibitors'),
             ],
+            indicatorColor: Colors.white, // Tab indicator color
           ),
         ),
         body: const Padding(
@@ -225,38 +251,23 @@ class _AddEventScreenState extends State<AddEventScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: _validate),
-              TextFormField(
-                  controller: _dateController,
-                  decoration: const InputDecoration(labelText: 'Date'),
-                  validator: _validate),
-              TextFormField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                  validator: _validate),
-              TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  validator: _validate),
-              TextFormField(
-                  controller: _contactController,
-                  decoration: const InputDecoration(labelText: 'Contact'),
-                  validator: _validate),
-              TextFormField(
-                  controller: _guestsController,
-                  decoration: const InputDecoration(labelText: 'Guests'),
-                  validator: _validate),
+              _buildTextField(_nameController, 'Name'),
+              _buildTextField(_dateController, 'Date'),
+              _buildTextField(_locationController, 'Location'),
+              _buildTextField(_descriptionController, 'Description'),
+              _buildTextField(_contactController, 'Contact'),
+              _buildTextField(_guestsController, 'Guests'),
               const SizedBox(height: 16),
               ElevatedButton(
-                  onPressed: _pickPDF,
-                  child: const Text('Upload Schedule PDF')),
+                onPressed: _pickPDF,
+                child: const Text('Upload Schedule PDF'),
+              ),
               if (_pdfFile != null) Text(_pdfFile!.name),
               const SizedBox(height: 16),
               ElevatedButton(
-                  onPressed: _uploadEvent, child: const Text('Add Event')),
+                onPressed: _uploadEvent,
+                child: const Text('Add Event'),
+              ),
             ],
           ),
         ),
@@ -264,8 +275,22 @@ class _AddEventScreenState extends State<AddEventScreen> {
     );
   }
 
+  Widget _buildTextField(TextEditingController controller, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        validator: _validate,
+      ),
+    );
+  }
+
   String? _validate(String? value) =>
-      (value == null || value.isEmpty) ? 'Required' : null;
+      (value == null || value.isEmpty) ? 'This field is required' : null;
 }
 
 class ApproveExhibitorsPage extends StatelessWidget {
