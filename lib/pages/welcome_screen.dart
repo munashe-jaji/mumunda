@@ -8,75 +8,116 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeGreen = Colors.green.shade700;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(25),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Logo and Title
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 50,
+                  ),
+                  const SizedBox(width: 10),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Welcome Card
               Expanded(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.only(right: 15.0, left: 15, bottom: 15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      const Text(
-                        'Welcome to Mumunda',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 54, 54, 54),
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Welcome to Mumunda',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF333333),
+                          ),
                         ),
-                      ),
-                      const Text(
-                        'Join the ultimate Mashonaland West Agriculture Trade Show',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 20,
+                        const SizedBox(height: 10),
+                        const Text(
+                          'The ultimate Mashonaland West Agriculture Trade Show.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 15),
-                      Image.asset(
-                        'assets/images/login.jpg', // Replace with your image path
-                        height: 280,
-                      ),
-                      const SizedBox(height: 15),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushNamed(context, LoginScreen.id);
-                              },
-                              child: const Text('Login'),
+                        const SizedBox(height: 30),
+
+                        // Login Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(context, LoginScreen.id);
+                            },
+                            icon: const Icon(Icons.login),
+                            label: const Text('Login'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: themeGreen,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              textStyle: const TextStyle(fontSize: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.pushNamed(context, SignUpScreen.id);
-                              },
-                              child: const Text('Sign Up'),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Sign Up Button with account icon
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(context, SignUpScreen.id);
+                            },
+                            icon: const Icon(Icons.person_add_alt_1),
+                            label: const Text('Create Account'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              textStyle: const TextStyle(fontSize: 16),
+                              side: BorderSide(color: themeGreen),
+                              foregroundColor: themeGreen,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 15),
-              Center(
-                child: Image.asset(
-                  'assets/images/logo.png', // Replace with your logo image path
-                  height: 100,
+
+              const SizedBox(height: 20),
+
+              // Footer
+              const Center(
+                child: Text(
+                  '© 2025 Mumunda AgriTech',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ),
             ],
