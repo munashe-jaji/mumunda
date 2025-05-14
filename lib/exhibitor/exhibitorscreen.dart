@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:html' as html;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -92,8 +93,9 @@ class ProductsPage extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: DataTable(
               columnSpacing: 24,
-              headingRowColor: MaterialStateProperty.all(Colors.green[100]),
+              headingRowColor: WidgetStateProperty.all(Colors.green[100]),
               columns: const [
+                DataColumn(label: Text('Image')),
                 DataColumn(label: Text('Name')),
                 DataColumn(label: Text('Price')),
                 DataColumn(label: Text('Description')),
@@ -102,6 +104,17 @@ class ProductsPage extends StatelessWidget {
               rows: products.map((product) {
                 final data = product.data() as Map<String, dynamic>;
                 return DataRow(cells: [
+                  DataCell(data['image'] != null
+                      ? Image.network(
+                          data['image'],
+                          width: 80,
+                          height: 80,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.broken_image,
+                                color: Colors.red);
+                          },
+                        )
+                      : const Icon(Icons.image_not_supported)),
                   DataCell(Text(data['name'] ?? '')),
                   DataCell(Text(data['price'] ?? '')),
                   DataCell(Text(data['description'] ?? '')),
@@ -174,7 +187,10 @@ class _AddProductsPageState extends State<AddProductsPage> {
           final storageRef = FirebaseStorage.instance
               .ref()
               .child('products/${_imageFile!.name}');
-          final uploadTask = storageRef.putData(_imageFile!.bytes!);
+          final uploadTask = storageRef.putData(
+            _imageFile!.bytes!,
+            SettableMetadata(contentType: 'image/jpeg'), // or png based on file
+          );
           final snapshot = await uploadTask.whenComplete(() {});
           imageUrl = await snapshot.ref.getDownloadURL();
         }

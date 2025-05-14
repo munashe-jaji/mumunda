@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mis/pages/login_screen.dart';
-import 'package:mis/services/auth_service.dart'; // Import FirebaseAuth for logout functionality
+import 'package:mis/services/auth_service.dart';
 import 'dart:async';
 import 'package:mis/pages/exhibitors_screen.dart';
 import 'package:mis/pages/map_screen.dart';
-import 'package:mis/pages/marketplace_screen.dart'; // Renamed ProductsScreen to MarketplaceScreen
+import 'package:mis/pages/marketplace_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _widgetOptions = <Widget>[
       const HomeScreenContent(),
-      MarketplaceScreen(), // Updated to MarketplaceScreen
+      MarketplaceScreen(),
       const MapScreen(),
       const ExhibitorsScreen(),
     ];
@@ -42,14 +42,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Removes the back button
+        automaticallyImplyLeading: false,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Image.asset(
-              'assets/images/logo.png', // Path to your logo image
-              height: 100, // Adjust the height as needed
-            ), // Display the email
+              'assets/images/logo.png',
+              height: 100,
+            ),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () async {
@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_bag),
-            label: 'Marketplace', // Updated label
+            label: 'Marketplace',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
@@ -104,7 +104,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
   final PageController _pageController = PageController();
   Timer? _timer;
 
-  final Color primaryGreen = const Color(0xFF2E7D32); // Rich green
+  final Color primaryGreen = const Color(0xFF2E7D32);
 
   @override
   void initState() {
@@ -130,11 +130,11 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF1FDF3), // Light greenish background
+      color: const Color(0xFFF1FDF3),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Carousel Banner
+          // Carousel
           SizedBox(
             height: 160,
             child: ClipRRect(
@@ -195,7 +195,83 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
               ),
             ),
           ),
+          const SizedBox(height: 20),
+
+          // Featured Products
+          const Text(
+            '🌟 Featured Products',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          _buildHorizontalList([
+            'Maize Seeds',
+            'Organic Tomatoes',
+            'Irrigation Pipe',
+          ]),
+
+          const SizedBox(height: 20),
+
+          // Popular Products
+          const Text(
+            '🔥 Popular Products',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          _buildHorizontalList([
+            'Fresh Carrots',
+            'Cattle Feed',
+            'Solar Water Pump',
+          ]),
+
+          const SizedBox(height: 20),
+
+          // Popular Exhibitors
+          const Text(
+            '👨‍🌾 Popular Exhibitors',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          _buildHorizontalList([
+            'GreenGrow Ltd',
+            'FarmTech Zim',
+            'EcoHarvest Co',
+          ]),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHorizontalList(List<String> items) {
+    return SizedBox(
+      height: 100,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          return Container(
+            width: 160,
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Center(
+              child: Text(
+                items[index],
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -209,7 +285,7 @@ class BannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF66BB6A), // Lighter green
+      color: const Color(0xFF66BB6A),
       child: Center(
         child: Text(
           text,
@@ -220,27 +296,6 @@ class BannerCard extends StatelessWidget {
           ),
           textAlign: TextAlign.center,
         ),
-      ),
-    );
-  }
-}
-
-class BannerItem extends StatelessWidget {
-  final String text;
-
-  const BannerItem({required this.text, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
-        textAlign: TextAlign.center,
       ),
     );
   }
