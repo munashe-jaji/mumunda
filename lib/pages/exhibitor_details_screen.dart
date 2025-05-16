@@ -28,7 +28,7 @@ class _ExhibitorDetailsScreenState extends State<ExhibitorDetailsScreen> {
           .doc(widget.exhibitorId)
           .get();
 
-      final exhibitorData = doc.data() as Map<String, dynamic>?;
+      final exhibitorData = doc.data();
 
       if (exhibitorData != null) {
         final email = exhibitorData['email'];
@@ -39,9 +39,8 @@ class _ExhibitorDetailsScreenState extends State<ExhibitorDetailsScreen> {
             .where('email', isEqualTo: email)
             .get();
 
-        final products = productsSnapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .toList();
+        final products =
+            productsSnapshot.docs.map((doc) => doc.data()).toList();
 
         setState(() {
           exhibitor = exhibitorData;
