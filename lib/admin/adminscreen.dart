@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:mis/services/auth_service.dart';
 import 'package:mis/pages/login_screen.dart';
-import 'package:web/web.dart' as web;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,22 +17,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        primaryColor: Colors.green, // Primary color (green)
+        primaryColor: Colors.green,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.green, // Green AppBar
+          backgroundColor: Colors.green,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green, // Green buttons
+            backgroundColor: Colors.green,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12), // Rounded corners
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         ),
         colorScheme: ColorScheme.fromSwatch(
           primarySwatch: Colors.green,
         ).copyWith(
-          secondary: Colors.greenAccent, // Accent color (lighter green)
+          secondary: Colors.greenAccent,
         ),
         textTheme: TextTheme(
           titleLarge: TextStyle(
@@ -78,7 +75,7 @@ class AdminScreen extends StatelessWidget {
               Tab(text: 'Manage Events'),
               Tab(text: 'Approve Exhibitors'),
             ],
-            indicatorColor: Colors.white, // Tab indicator color
+            indicatorColor: Colors.white,
           ),
         ),
         body: const Padding(
@@ -132,7 +129,6 @@ class ManageEventsPage extends StatelessWidget {
                     DataColumn(label: Text('Event Name')),
                     DataColumn(label: Text('Date')),
                     DataColumn(label: Text('Location')),
-                    DataColumn(label: Text('Schedule')),
                     DataColumn(label: Text('Actions')),
                   ],
                   rows: events.map((event) {
@@ -141,16 +137,22 @@ class ManageEventsPage extends StatelessWidget {
                       DataCell(Text(data['name'] ?? '')),
                       DataCell(Text(data['date'] ?? '')),
                       DataCell(Text(data['location'] ?? '')),
-                      DataCell(data['schedule'] != null
-                          ? InkWell(
-                              onTap: () =>
-                                  web.window.open(data['schedule'], '_blank'),
-                              child: const Text('View PDF',
-                                  style: TextStyle(color: Colors.blue)),
-                            )
-                          : const Text('No PDF')),
                       DataCell(Row(
                         children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditEventScreen(
+                                    eventId: event.id,
+                                    eventData: data,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () async {
@@ -190,38 +192,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final _nameController = TextEditingController();
   final _dateController = TextEditingController();
 
-  PlatformFile? _pdfFile;
-  String? pdfUrl;
-
-  Future<void> _pickPDF() async {
-    final result = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-    if (result != null) {
-      setState(() => _pdfFile = result.files.first);
-    }
-  }
-
   Future<void> _uploadEvent() async {
     if (_formKey.currentState!.validate()) {
       try {
-        if (_pdfFile != null) {
-          final storageRef = FirebaseStorage.instance
-              .ref()
-              .child('schedules/${_pdfFile!.name}');
-          final uploadTask = storageRef.putData(_pdfFile!.bytes!);
-
-          // Log the upload task state
-          uploadTask.snapshotEvents.listen((event) {
-            print('Task state: ${event.state}');
-            print(
-                'Progress: ${(event.bytesTransferred / event.totalBytes) * 100} %');
-          });
-
-          final snapshot = await uploadTask.whenComplete(() {});
-          pdfUrl = await snapshot.ref.getDownloadURL();
-          print('PDF uploaded successfully: $pdfUrl');
-        }
-
         await FirebaseFirestore.instance.collection('events').add({
           'contact': _contactController.text,
           'description': _descriptionController.text,
@@ -229,7 +202,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
           'location': _locationController.text,
           'name': _nameController.text,
           'date': _dateController.text,
-          'schedule': pdfUrl,
         });
 
         Navigator.pop(context);
@@ -259,12 +231,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
               _buildTextField(_guestsController, 'Guests'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _pickPDF,
-                child: const Text('Upload Schedule PDF'),
-              ),
-              if (_pdfFile != null) Text(_pdfFile!.name),
-              const SizedBox(height: 16),
-              ElevatedButton(
                 onPressed: _uploadEvent,
                 child: const Text('Add Event'),
               ),
@@ -284,13 +250,112 @@ class _AddEventScreenState extends State<AddEventScreen> {
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        validator: _validate,
+        validator: (value) =>
+            (value == null || value.isEmpty) ? 'This field is required' : null,
+      ),
+    );
+  }
+}
+
+class EditEventScreen extends StatefulWidget {
+  final String eventId;
+  final Map<String, dynamic> eventData;
+
+  const EditEventScreen(
+      {super.key, required this.eventId, required this.eventData});
+
+  @override
+  State<EditEventScreen> createState() => _EditEventScreenState();
+}
+
+class _EditEventScreenState extends State<EditEventScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _contactController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _guestsController;
+  late TextEditingController _locationController;
+  late TextEditingController _nameController;
+  late TextEditingController _dateController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.eventData['name']);
+    _dateController = TextEditingController(text: widget.eventData['date']);
+    _locationController =
+        TextEditingController(text: widget.eventData['location']);
+    _descriptionController =
+        TextEditingController(text: widget.eventData['description']);
+    _contactController =
+        TextEditingController(text: widget.eventData['contact']);
+    _guestsController = TextEditingController(text: widget.eventData['guests']);
+  }
+
+  Future<void> _updateEvent() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('events')
+            .doc(widget.eventId)
+            .update({
+          'name': _nameController.text,
+          'date': _dateController.text,
+          'location': _locationController.text,
+          'description': _descriptionController.text,
+          'contact': _contactController.text,
+          'guests': _guestsController.text,
+        });
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating event: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Edit Event')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              _buildTextField(_nameController, 'Name'),
+              _buildTextField(_dateController, 'Date'),
+              _buildTextField(_locationController, 'Location'),
+              _buildTextField(_descriptionController, 'Description'),
+              _buildTextField(_contactController, 'Contact'),
+              _buildTextField(_guestsController, 'Guests'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _updateEvent,
+                child: const Text('Update Event'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  String? _validate(String? value) =>
-      (value == null || value.isEmpty) ? 'This field is required' : null;
+  Widget _buildTextField(TextEditingController controller, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        validator: (value) =>
+            (value == null || value.isEmpty) ? 'This field is required' : null,
+      ),
+    );
+  }
 }
 
 class ApproveExhibitorsPage extends StatelessWidget {
@@ -307,7 +372,7 @@ class ApproveExhibitorsPage extends StatelessWidget {
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('exhibitors')
-                .where('status', isEqualTo: 'pending') // Filter by status
+                .where('status', isEqualTo: 'pending')
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
@@ -344,7 +409,6 @@ class ApproveExhibitorsPage extends StatelessWidget {
                           const SizedBox(width: 8),
                           ElevatedButton(
                             onPressed: () async {
-                              // Delete the exhibitor's account and data
                               await FirebaseFirestore.instance
                                   .collection('exhibitors')
                                   .doc(ex.id)

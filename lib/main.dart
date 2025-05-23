@@ -5,7 +5,6 @@ import 'pages/splash_screen.dart';
 import 'pages/welcome_screen.dart';
 import 'pages/login_screen.dart';
 import 'pages/signup_screen.dart';
-import 'pages/map_screen.dart';
 import 'pages/marketplace_screen.dart';
 import 'pages/exhibitors_screen.dart';
 
@@ -45,7 +44,6 @@ class MyApp extends StatelessWidget {
         WelcomeScreen.id: (context) => const WelcomeScreen(),
         LoginScreen.id: (context) => const LoginScreen(),
         SignUpScreen.id: (context) => const SignUpScreen(),
-        MapScreen.id: (context) => const MapScreen(),
         MarketplaceScreen.id: (context) => const MarketplaceScreen(),
         ExhibitorsScreen.id: (context) => const ExhibitorsScreen(),
       },

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:mis/services/auth_service.dart';
 import 'package:mis/pages/login_screen.dart';
-import 'dart:typed_data';
 
 class SignUpScreen extends StatefulWidget {
   static String id = 'signup_screen';
@@ -28,34 +25,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   final _farmNameController = TextEditingController();
   final _farmSizeController = TextEditingController();
-  String? _selectedFarmingType;
+  final _farmingTypeController = TextEditingController();
 
   final _contactController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  Uint8List? _logoBytes;
-  String? _logoFileName;
-  String? _logoUrl;
-
   bool _isFarmer = false;
   bool _isExhibitor = false;
-
-  Future<void> _pickLogo() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null && result.files.single.bytes != null) {
-      setState(() {
-        _logoBytes = result.files.single.bytes;
-        _logoFileName = result.files.single.name;
-      });
-    }
-  }
-
-  Future<void> _uploadLogo(String uid) async {
-    if (_logoBytes == null) return;
-    final ref = FirebaseStorage.instance.ref().child('logos/$uid.jpg');
-    await ref.putData(_logoBytes!, SettableMetadata(contentType: 'image/jpeg'));
-    _logoUrl = await ref.getDownloadURL();
-  }
+  bool _obscurePassword = true;
 
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
@@ -69,7 +46,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _locationController.text.trim(),
         farmName: _isFarmer ? _farmNameController.text.trim() : null,
         farmSize: _isFarmer ? _farmSizeController.text.trim() : null,
-        farmingType: _isFarmer ? _selectedFarmingType : null,
+        farmingType: _isFarmer ? _farmingTypeController.text.trim() : null,
         contact: _isExhibitor ? _contactController.text.trim() : null,
         description: _isExhibitor ? _descriptionController.text.trim() : null,
         logo: null,
@@ -78,8 +55,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (user != null) {
-        await _uploadLogo(user.uid);
-
         final collection = FirebaseFirestore.instance
             .collection(_isFarmer ? 'farmers' : 'exhibitors');
 
@@ -91,12 +66,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           if (_isFarmer) ...{
             'farmName': _farmNameController.text.trim(),
             'farmSize': _farmSizeController.text.trim(),
-            'farmingType': _selectedFarmingType,
+            'farmingType': _farmingTypeController.text.trim(),
           },
           if (_isExhibitor) ...{
             'contact': _contactController.text.trim(),
             'description': _descriptionController.text.trim(),
-            'logo': _logoUrl,
             'status': 'pending',
           },
         });
@@ -113,12 +87,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  Widget _buildTextField(TextEditingController controller, String labelText,
-      {bool obscure = false, String? Function(String?)? validator}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String labelText, {
+    bool obscure = false,
+    String? Function(String?)? validator,
+  }) {
+    final isPasswordField = labelText.toLowerCase() == 'password';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
+        obscureText: obscure ? _obscurePassword : false,
         decoration: InputDecoration(
           filled: true,
           fillColor: Colors.green[50],
@@ -127,8 +107,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          suffixIcon: isPasswordField
+              ? IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.green,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                )
+              : null,
         ),
-        obscureText: obscure,
         validator: validator ??
             (value) =>
                 value == null || value.isEmpty ? 'Enter your $labelText' : null,
@@ -229,8 +221,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           content: Column(
                             children: [
                               _buildTextField(_emailController, "Email"),
-                              _buildTextField(_passwordController, "Password",
-                                  obscure: true),
+                              _buildTextField(
+                                _passwordController,
+                                "Password",
+                                obscure: true,
+                              ),
                             ],
                           ),
                         ),
@@ -253,34 +248,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         _farmNameController, "Farm Name"),
                                     _buildTextField(
                                         _farmSizeController, "Farm Size"),
-                                    DropdownButtonFormField<String>(
-                                      value: _selectedFarmingType,
-                                      items: [
-                                        'Crop Farming',
-                                        'Livestock',
-                                        'Mixed Farming',
-                                        'Horticulture'
-                                      ]
-                                          .map((type) => DropdownMenuItem(
-                                                value: type,
-                                                child: Text(type),
-                                              ))
-                                          .toList(),
-                                      onChanged: (value) => setState(
-                                          () => _selectedFarmingType = value),
-                                      decoration: InputDecoration(
-                                        labelText: "Farming Type",
-                                        filled: true,
-                                        fillColor: Colors.green[50],
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                      validator: (value) =>
-                                          _isFarmer && value == null
-                                              ? "Select your farming type"
-                                              : null,
+                                    _buildTextField(
+                                      _farmingTypeController,
+                                      "Farming Type",
                                     ),
                                   ],
                                 )
@@ -295,25 +265,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         _contactController, "Contact"),
                                     _buildTextField(
                                         _descriptionController, "Description"),
-                                    const SizedBox(height: 10),
-                                    ElevatedButton.icon(
-                                      onPressed: _pickLogo,
-                                      icon: const Icon(Icons.upload_file),
-                                      label: const Text("Upload Logo"),
-                                      style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.green),
-                                    ),
-                                    if (_logoFileName != null)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 8.0),
-                                        child: Text(
-                                          "Selected: $_logoFileName",
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.green),
-                                        ),
-                                      ),
                                   ],
                                 )
                               : const Text("Not applicable"),

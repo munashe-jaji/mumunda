@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:mis/pages/login_screen.dart';
-import 'package:mis/services/auth_service.dart';
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:mis/pages/exhibitors_screen.dart';
-import 'package:mis/pages/map_screen.dart';
+import 'package:mis/pages/login_screen.dart';
 import 'package:mis/pages/marketplace_screen.dart';
+import 'package:mis/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final String email;
@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _widgetOptions = <Widget>[
       const HomeScreenContent(),
       MarketplaceScreen(),
-      const MapScreen(),
       const ExhibitorsScreen(),
     ];
   }
@@ -50,8 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'assets/images/logo.png',
               height: 100,
             ),
-            IconButton(
-              icon: const Icon(Icons.logout),
+            TextButton.icon(
               onPressed: () async {
                 await AuthService().signOut();
                 Navigator.pushReplacement(
@@ -59,6 +57,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
                 );
               },
+              icon:
+                  const Icon(Icons.logout, color: Color.fromARGB(255, 1, 0, 0)),
+              label: const Text(
+                'Logout',
+                style: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+              ),
             ),
           ],
         ),
@@ -73,10 +77,6 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_bag),
             label: 'Marketplace',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Map',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
@@ -103,27 +103,16 @@ class HomeScreenContent extends StatefulWidget {
 class _HomeScreenContentState extends State<HomeScreenContent> {
   final PageController _pageController = PageController();
   Timer? _timer;
-
   final Color primaryGreen = const Color(0xFF2E7D32);
 
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
-      int nextPage = (_pageController.page?.round() ?? 0) + 1;
-      if (nextPage > 2) nextPage = 0;
-      _pageController.animateToPage(
-        nextPage,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    });
-  }
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void dispose() {
     _timer?.cancel();
     _pageController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -134,49 +123,17 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Carousel
-          SizedBox(
-            height: 160,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: PageView(
-                controller: _pageController,
-                children: const [
-                  BannerCard(text: '🎤 Guest Speaker: Sir Manango'),
-                  BannerCard(text: '🛠 Workshop: Trade Show Insights'),
-                  BannerCard(text: '🤖 AI in Farming Exhibition'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Search Bar
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Search products, exhibitors, or workshops...',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Welcome card
+          // Welcome Card
           Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             elevation: 3,
             color: primaryGreen,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
+            child: const Padding(
+              padding: EdgeInsets.all(20),
               child: Column(
-                children: const [
+                children: [
                   Text(
                     'Welcome to Mumunda!',
                     style: TextStyle(
@@ -197,105 +154,140 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
           ),
           const SizedBox(height: 20),
 
-          // Featured Products
-          const Text(
-            '🌟 Featured Products',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          _buildHorizontalList([
-            'Maize Seeds',
-            'Organic Tomatoes',
-            'Irrigation Pipe',
-          ]),
-
-          const SizedBox(height: 20),
-
-          // Popular Products
-          const Text(
-            '🔥 Popular Products',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          _buildHorizontalList([
-            'Fresh Carrots',
-            'Cattle Feed',
-            'Solar Water Pump',
-          ]),
-
-          const SizedBox(height: 20),
-
-          // Popular Exhibitors
-          const Text(
-            '👨‍🌾 Popular Exhibitors',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          _buildHorizontalList([
-            'GreenGrow Ltd',
-            'FarmTech Zim',
-            'EcoHarvest Co',
-          ]),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHorizontalList(List<String> items) {
-    return SizedBox(
-      height: 100,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          return Container(
-            width: 160,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Center(
-              child: Text(
-                items[index],
-                style: const TextStyle(fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center,
+          // Search Bar
+          TextField(
+            controller: _searchController,
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value.toLowerCase().trim();
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Search events by name, location, or description...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class BannerCard extends StatelessWidget {
-  final String text;
-
-  const BannerCard({required this.text, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF66BB6A),
-      child: Center(
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
           ),
-          textAlign: TextAlign.center,
-        ),
+          const SizedBox(height: 20),
+
+          // Title
+          const Text(
+            '📅 Upcoming Events',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+
+          // Events List
+          FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('events')
+                .orderBy('date')
+                .get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(child: Text('No events available.'));
+              }
+
+              final now = DateTime.now();
+
+              final events = snapshot.data!.docs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final name = data['name']?.toString().toLowerCase() ?? '';
+                final location =
+                    data['location']?.toString().toLowerCase() ?? '';
+                final description =
+                    data['description']?.toString().toLowerCase() ?? '';
+
+                // Search filter
+                final matchesSearch = name.contains(_searchQuery) ||
+                    location.contains(_searchQuery) ||
+                    description.contains(_searchQuery);
+
+                // Date filter (upcoming only)
+                final dateField = data['date'];
+                DateTime? eventDate;
+
+                if (dateField is Timestamp) {
+                  eventDate = dateField.toDate();
+                } else if (dateField is String) {
+                  try {
+                    eventDate = DateTime.parse(dateField);
+                  } catch (_) {
+                    eventDate = null;
+                  }
+                }
+
+                return matchesSearch &&
+                    (eventDate == null || eventDate.isAfter(now));
+              }).toList();
+
+              if (events.isEmpty) {
+                return const Center(
+                    child: Text('No matching upcoming events found.'));
+              }
+
+              return Column(
+                children: events.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final name = data['name'] ?? 'Unnamed Event';
+                  final location = data['location'] ?? 'Unknown Location';
+                  final description = data['description'] ?? 'No description';
+                  String dateStr = 'No Date';
+                  final dateField = data['date'];
+                  if (dateField is Timestamp) {
+                    dateStr = dateField.toDate().toString().split(' ')[0];
+                  } else if (dateField is String) {
+                    dateStr = dateField;
+                  }
+
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            description,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '📍 $location',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                          Text(
+                            '🗓️ $dateStr',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

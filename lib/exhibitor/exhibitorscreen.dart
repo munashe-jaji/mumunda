@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mis/pages/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,8 +47,18 @@ class ExhibitorScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              // TODO: Add logout logic
+            onPressed: () async {
+              try {
+                await FirebaseAuth.instance.signOut();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Logout failed: $e')),
+                );
+              }
             },
           ),
         ],
@@ -58,7 +70,8 @@ class ExhibitorScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => AddProductsPage(email: email)),
+              builder: (context) => AddProductsPage(email: email),
+            ),
           );
         },
         child: const Icon(Icons.add, color: Colors.white),
@@ -102,22 +115,27 @@ class ProductsPage extends StatelessWidget {
               ],
               rows: products.map((product) {
                 final data = product.data() as Map<String, dynamic>;
+                final imageUrl = data['image'];
+                final price = data['price'];
+                final quantity = data['quantity'];
+
                 return DataRow(cells: [
-                  DataCell(data['image'] != null
+                  DataCell(imageUrl != null
                       ? Image.network(
-                          data['image'],
+                          imageUrl,
                           width: 80,
                           height: 80,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.broken_image,
-                                color: Colors.red);
-                          },
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image, color: Colors.red),
                         )
                       : const Icon(Icons.image_not_supported)),
-                  DataCell(Text(data['name'] ?? '')),
-                  DataCell(Text(data['price'] ?? '')),
-                  DataCell(Text(data['description'] ?? '')),
-                  DataCell(Text(data['quantity'] ?? '')),
+                  DataCell(Text('${data['name'] ?? ''}')),
+                  DataCell(Text(price != null
+                      ? double.tryParse(price.toString())?.toStringAsFixed(2) ??
+                          ''
+                      : '')),
+                  DataCell(Text('${data['description'] ?? ''}')),
+                  DataCell(Text(quantity != null ? quantity.toString() : '')),
                 ]);
               }).toList(),
             ),
@@ -188,7 +206,7 @@ class _AddProductsPageState extends State<AddProductsPage> {
               .child('products/${_imageFile!.name}');
           final uploadTask = storageRef.putData(
             _imageFile!.bytes!,
-            SettableMetadata(contentType: 'image/jpeg'), // or png based on file
+            SettableMetadata(contentType: 'image/jpeg'),
           );
           final snapshot = await uploadTask.whenComplete(() {});
           imageUrl = await snapshot.ref.getDownloadURL();

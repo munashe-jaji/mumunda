@@ -33,14 +33,15 @@ class _ExhibitorDetailsScreenState extends State<ExhibitorDetailsScreen> {
       if (exhibitorData != null) {
         final email = exhibitorData['email'];
 
-        // Now fetch the exhibitor's products
         final productsSnapshot = await FirebaseFirestore.instance
             .collection('products')
             .where('email', isEqualTo: email)
             .get();
 
-        final products =
-            productsSnapshot.docs.map((doc) => doc.data()).toList();
+        final products = productsSnapshot.docs
+            .map((doc) => doc.data())
+            .cast<Map<String, dynamic>>()
+            .toList();
 
         setState(() {
           exhibitor = exhibitorData;
@@ -62,9 +63,10 @@ class _ExhibitorDetailsScreenState extends State<ExhibitorDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final exhibitorName = exhibitor?['name'] ?? 'Exhibitor Details';
     return Scaffold(
       appBar: AppBar(
-        title: Text(exhibitor?['name'] ?? 'Exhibitor Details'),
+        title: Text(exhibitorName),
         backgroundColor: Colors.green[700],
         foregroundColor: Colors.white,
       ),
@@ -93,12 +95,17 @@ class _ExhibitorDetailsScreenState extends State<ExhibitorDetailsScreen> {
                   : ListView(
                       padding: const EdgeInsets.all(16.0),
                       children: [
-                        exhibitor!['logo'] != null &&
-                                exhibitor!['logo'].isNotEmpty
-                            ? Image.network(exhibitor!['logo'])
-                            : const Text('No Logo',
-                                style: TextStyle(color: Colors.white)),
-                        const SizedBox(height: 16),
+                        if (exhibitor!['logo'] != null &&
+                            (exhibitor!['logo'] as String).isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Image.network(
+                              exhibitor!['logo'],
+                              height: 150,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image, size: 100),
+                            ),
+                          ),
                         Card(
                           elevation: 4,
                           shape: RoundedRectangleBorder(
@@ -115,54 +122,16 @@ class _ExhibitorDetailsScreenState extends State<ExhibitorDetailsScreen> {
                                       fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.email,
-                                        color: Colors.lightGreen),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      exhibitor!['email'] ?? 'No Email',
-                                      style: const TextStyle(fontSize: 18),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.contact_page,
-                                        color: Colors.lightGreen),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      exhibitor!['contact'] ?? 'No Contact',
-                                      style: const TextStyle(fontSize: 18),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.description,
-                                        color: Colors.lightGreen),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      exhibitor!['description'] ??
-                                          'No Description',
-                                      style: const TextStyle(fontSize: 18),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on,
-                                        color: Colors.lightGreen),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      exhibitor!['location'] ?? 'No Location',
-                                      style: const TextStyle(fontSize: 18),
-                                    ),
-                                  ],
-                                ),
+                                buildDetailRow(Icons.email,
+                                    exhibitor!['email'] ?? 'No Email'),
+                                buildDetailRow(Icons.contact_phone,
+                                    exhibitor!['contact'] ?? 'No Contact'),
+                                buildDetailRow(
+                                    Icons.description,
+                                    exhibitor!['description'] ??
+                                        'No Description'),
+                                buildDetailRow(Icons.location_on,
+                                    exhibitor!['location'] ?? 'No Location'),
                               ],
                             ),
                           ),
@@ -181,24 +150,53 @@ class _ExhibitorDetailsScreenState extends State<ExhibitorDetailsScreen> {
                               elevation: 3,
                               margin: const EdgeInsets.symmetric(vertical: 8.0),
                               child: ListTile(
-                                leading: product['image'] != null
-                                    ? Image.network(product['image'],
+                                leading: product['image'] != null &&
+                                        (product['image'] as String)
+                                            .trim()
+                                            .isNotEmpty
+                                    ? Image.network(
+                                        product['image'],
                                         width: 50,
                                         height: 50,
-                                        fit: BoxFit.cover)
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(Icons.broken_image),
+                                      )
                                     : const Icon(Icons.image_not_supported),
                                 title: Text(product['name'] ?? 'Unnamed'),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Price: ${product['price']}'),
-                                    Text('Qty: ${product['quantity']}'),
+                                    Text(
+                                        'Price: \$${(product['price'] ?? '').toString()}'),
+                                    Text(
+                                        'Qty: ${(product['quantity'] ?? '').toString()}'),
                                   ],
                                 ),
                               ),
                             )),
                       ],
                     ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildDetailRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.lightGreen),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 18),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

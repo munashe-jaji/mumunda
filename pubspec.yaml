@@ -43,6 +43,7 @@ dependencies:
   google_maps_flutter: ^2.5.0
   google_maps_flutter_web: ^0.5.4+3
   image_picker: ^1.0.4
+  cached_network_image: ^3.3.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -80,6 +81,7 @@ flutter:
     - assets/images/exhibitorsbc.jpg
     - assets/images/productsbc.jpg
     - assets/images/mapbc.jpg
+    - assets/images/background.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
